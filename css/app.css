@@ -801,3 +801,10 @@ ul.cd-feats { margin: 0; padding-left: 18px; } ul.cd-feats li { margin: 3px 0; }
 .save6.prof b, .save6.prof small { color: var(--gold2); }
 .sk-row.prof .skill-bonus, .sk-row.prof b { color: var(--gold2); }
 .sk-row.exp .skill-bonus, .sk-row.exp b { color: var(--gold2); text-shadow: 0 0 6px color-mix(in srgb, var(--gold) 60%, transparent); }
+/* หัวใบตัวละครจอแคบ: ชื่อ + คลาสเต็มแถวบน ปุ่มพัก/โหมดสู้/เมนูลงแถวล่างชิดขวา (ชื่อยาวไม่โดนบีบ) */
+@media (max-width: 560px) {
+  .sh-head { flex-wrap: wrap; row-gap: 6px; }
+  .sh-head .sh-title { flex: 1 1 calc(100% - 60px); }
+  .sh-head .sh-title + .rest-btn { margin-left: auto; }
+  .sh-title h1 { overflow-wrap: break-word; }
+}
