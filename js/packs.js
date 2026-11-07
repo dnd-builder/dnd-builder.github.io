@@ -54,7 +54,7 @@ export const featIdOf = name => {
 const META = 'hh.meta.v1';
 const metaGet = () => { try { return JSON.parse(localStorage.getItem(META)) || {}; } catch { return {}; } };
 /** หนังสือที่มีของให้ใช้ → [{id, title, n}] */
-export const OPEN_GROUPS = [['subclasses', 'ซับคลาส'], ['backgrounds', 'Background'], ['feats', 'Feat']];
+export const OPEN_GROUPS = [['subclasses', 'ซับคลาส'], ['backgrounds', 'Background'], ['feats', 'Feat'], ['species', 'เผ่า']];
 export function openDocs() {
   const o = {};
   for (const [g] of OPEN_GROUPS) for (const x of D.open?.[g] || []) ((o[x.src] ||= {})[g] = (o[x.src][g] || 0) + 1);
@@ -84,11 +84,12 @@ function openSub(s) {
 // ---------- ผสมแพ็กเข้ากับข้อมูล ----------
 let BASE = null;
 export function applyPacks() {
-  if (!BASE) BASE = { backgrounds: D.backgrounds, feats: D.feats, spells: D.spells, th: { feats: { ...D.th.feats }, spells: { ...D.th.spells }, backgrounds: { ...D.th.backgrounds } } };
+  if (!BASE) BASE = { backgrounds: D.backgrounds, feats: D.feats, spells: D.spells, species: D.species, th: { feats: { ...D.th.feats }, spells: { ...D.th.spells }, backgrounds: { ...D.th.backgrounds }, species: { ...D.th.species } } };
   const bgs = [...BASE.backgrounds], feats = [...BASE.feats], spells = [...BASE.spells];
   D.th.feats = { ...BASE.th.feats };
   D.th.spells = { ...BASE.th.spells };
   D.th.backgrounds = { ...BASE.th.backgrounds };
+  D.th.species = { ...BASE.th.species };
   const packSubs = {};
   D.packOf = {};   // id ไอเทม → ชื่อแพ็ก
   D.thFull = { spells: {} };
@@ -125,6 +126,15 @@ export function applyPacks() {
   const openFeat = (D.open?.feats || []).map(f => ({ ...f, pack: docTitle(f.src), open: f.src, tag: `${f.category} Feat (Prerequisite: ${f.prereq})` }));
   for (const b of openBg) { D.th.backgrounds[b.id] = { desc: D.open.th.backgrounds?.[b.id]?.s || '' }; if (openOn(b.src)) bgs.push(b); }
   for (const f of openFeat) { const t = D.open.th.feats?.[f.id] || {}; D.th.feats[f.id] = { t: t.t || f.t, s: t.s || '', tip: t.tip }; if (openOn(f.src)) feats.push(f); }
+  // เผ่าจากหนังสือ OGL (ไม่มีโบนัสค่าพลัง · Subrace = Lineage ให้เลือก)
+  const openSp = (D.open?.species || []).map(x => ({ ...x, pack: docTitle(x.src), open: x.src }));
+  const species = [...BASE.species];
+  for (const x of openSp) {
+    const t = D.open.th.species?.[x.id] || {};
+    D.th.species[x.id] = { tag: t.tag || '', desc: t.s || '', f: t.f || {}, ln: t.ln || {} };
+    if (openOn(x.src)) species.push(x);
+  }
+  D.species = species; D.sp = { ...Object.fromEntries(openSp.map(x => [x.id, x])), ...Object.fromEntries(species.map(x => [x.id, x])) };
   D.backgrounds = bgs; D.feats = feats; D.spells = spells;
   const idx = arr => Object.fromEntries(arr.map(x => [x.id, x]));
   D.bg = { ...idx(openBg), ...idx(bgs) }; D.feat = { ...idx(openFeat), ...idx(feats) }; D.spell = idx(spells);   // ของ OGL ที่ปิดเล่มยังหาเจอ (ตัวละครเดิมเปิดได้)

@@ -182,6 +182,51 @@ def feats():
                         'prereq': 'Level 4+' + (f'; {pre}' if pre else ''), 't': act_of(text), 'text': text})
     return out
 
+SKIP_TRAIT = re.compile(r'^(Ability Score Increase|Age|Alignment|Size|Speed|Languages?|Subrace|Heritage Subrace|Race Chassis)$', re.I)
+def traits_of(md, prefix=''):
+    """'***Name.*** text' → [{id, name, text}] (ตัดโบนัสค่าพลัง/อายุ/นิสัย/ขนาด/ภาษาของกฎ 2014 ออก)"""
+    out = []
+    for m in re.finditer(r'\*\*\*(.+?)\.?\*\*\*\s*(.*?)(?=\n\s*\*\*\*[^*\n]+?\*\*\*|\Z)', md or '', re.S):
+        name, text = m.group(1).strip().rstrip('.'), clean(m.group(2)).rstrip('*').strip()
+        if SKIP_TRAIT.match(name) or not text: continue
+        tr = {'id': prefix + slug(name), 'name': name, 't': act_of(text), 'text': text}
+        m2 = re.search(r'proficiency (?:in|with) the ([A-Z][\w ]+?)(?: and ([A-Z][\w ]+?))? skills?\b', text)
+        if m2 and not re.search(r'choice|choose', text[m2.start():m2.end() + 40], re.I):
+            sk = [x for x in (m2.group(1), m2.group(2)) if x and x.strip() in SKILLS]
+            if sk: tr['skills'] = sk
+        out.append(tr)
+    return out
+def dv_of(t):
+    m = re.search(r'(?:darkvision|dim light) (?:out to a range of |within )?(\d+) (?:feet|ft)', t or '', re.I)
+    return int(m.group(1)) if m else 0
+
+def species():
+    """เผ่า 2014 → กฎ 2024: ตัดโบนัสค่าพลัง (ได้จาก Background แทน) · Subrace → Lineage ให้เลือก"""
+    out = []
+    for doc in ['toh']:
+        subs = load(doc, 'Subrace')
+        for e in load(doc, 'Race'):
+            f = e['fields']; name = f['name'].strip(); key = e['pk']
+            sp = json.loads(f.get('speed_json') or '{}')
+            tr = traits_of(f.get('vision') or '') + traits_of(f.get('traits') or '')
+            x = {'id': f'open:{doc}:{slug(name)}', 'src': doc, 'name': name, 'type': 'Humanoid',
+                 'size': (re.search(r'Your size is (Small|Medium|Large)', f.get('size') or '') or [None, 'Medium'])[1], 'sizeText': clean(f.get('size') or ''), 'speed': sp.get('walk', 30),
+                 'speeds': {k: v for k, v in sp.items() if k != 'walk' and isinstance(v, int)}, 'darkvision': dv_of(f.get('vision')),
+                 'traits': tr, 'text': clean(f.get('desc') or '')}
+            if not re.search(r'Your size is (Small|Medium|Large)', f.get('size') or ''): x['sizeChoice'] = True
+            if re.search(r'creature type is undead|you are undead', f.get('traits') or '', re.I): x['type'] = 'Undead'
+            lang = re.sub(r'^\*+Languages\.\*+\s*', '', f.get('languages') or '').strip()
+            if lang: x['lang'] = lang
+            lin = []
+            for se in subs:
+                sf = se['fields']
+                if sf.get('parent_race') != key: continue
+                ln = sf['name'].strip(); lt = traits_of(sf.get('traits') or '', slug(ln) + '--')
+                lin.append({'name': ln, 'text': clean(sf.get('desc') or ''), 'traits': lt, 'darkvision': dv_of(sf.get('traits'))})
+            if lin: x['lineages'] = lin
+            out.append(x)
+    return out
+
 def docs():
     out = {}
     for d in DOCS + SPELL_DOCS:
@@ -202,6 +247,6 @@ if __name__ == '__main__':
     subs = subclasses()
     json.dump(subs, open(os.path.join(OUT, 'subclasses.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     json.dump(docs(), open(os.path.join(OUT, 'docs.json'), 'w'), ensure_ascii=False, indent=1)
-    for k, fn in (('backgrounds', backgrounds), ('feats', feats)):
+    for k, fn in (('backgrounds', backgrounds), ('feats', feats), ('species', species)):
         v = fn(); json.dump(v, open(os.path.join(OUT, k + '.json'), 'w'), ensure_ascii=False, separators=(',', ':')); print(k, len(v))
     print('subclasses', len(subs), 'features', sum(len(s['features']) for s in subs))

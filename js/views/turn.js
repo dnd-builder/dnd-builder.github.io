@@ -190,7 +190,7 @@ export function featureActions(x) {
   if (x.cls) for (const f of x.feats) add(f.name, f.pack ? f.th : thFeature(x.cls.id, f.id, f.src === 'sub'), () => classFeatureCard(x.cls, f, f.src === 'sub'), x.cls.id);
   for (const mc of x.mcFeats) for (const f of mc.feats) add(f.name, f.pack ? f.th : thFeature(mc.cls.id, f.id, f.src === 'sub'), () => classFeatureCard(mc.cls, f, f.src === 'sub'), mc.cls.id);
   for (const id of new Set(x.featIds)) { const f = D.feat[id]; if (f) add(f.name, D.th.feats?.[id], () => featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id], pack: f.pack })); }
-  if (x.sp) for (const tr of x.sp.traits) { const th = D.th.species?.[x.sp.id]?.f?.[tr.id]; add(tr.name, th, () => featureCard({ name: tr.name, text: tr.text, th, full: ['species', [x.sp.id, tr.id]] })); }
+  if (x.sp) for (const tr of x.sp.traits) { const th = D.th.species?.[x.sp.id]?.f?.[tr.id] || (x.sp.open ? { t: tr.t } : null); add(tr.name, th, () => featureCard({ name: tr.name, text: tr.text, th, full: x.sp.open ? null : ['species', [x.sp.id, tr.id]], pack: x.sp.open ? x.sp.pack : null, open: x.sp.open })); }
   return out;
 }
 export const resLeft = (P, r) => (r ? r.max - (P.res[r.id] || 0) : null);

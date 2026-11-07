@@ -218,6 +218,18 @@ export function featAsiRule(f) {
 const REPEATABLE = new Set(['ability-score-improvement', 'skilled', 'magic-initiate']);
 export const featRepeatable = f => !!f && (!!f.repeatable || REPEATABLE.has(f.id) || /Repeatable\./.test(f.text || ''));
 const hasFightingStyle = c => Object.entries(classLevels(c)).some(([id, n]) => FIGHTING_STYLE_AT[id] && n >= FIGHTING_STYLE_AT[id]);
+/** เผ่าที่ใช้จริง — เผ่า OGL รวม trait ของ Subrace (Lineage) ที่เลือกเข้าไปด้วย */
+export function spOf(c) {
+  const sp = D.sp[c.speciesId];
+  if (!sp?.open) return sp;
+  const ln = sp.lineages?.find(l => l.name === c.speciesOpt?.lineage);
+  return ln ? { ...sp, traits: [...sp.traits, ...ln.traits], darkvision: Math.max(sp.darkvision || 0, ln.darkvision || 0) } : sp;
+}
+/** ตัวเลือกของเผ่า (SRD ใช้ SPECIES_OPT, เผ่า OGL ใช้ Subrace) */
+export function spOpt(id) {
+  const sp = D.sp?.[id];
+  return SPECIES_OPT[id] || (sp?.lineages?.length ? { key: 'lineage', label: 'Subrace (Lineage)', opts: sp.lineages.map(l => [l.name]) } : null);
+}
 /** Background ที่ใช้จริง — แบบ custom (OGL 2014) เอาค่าพลัง / Origin Feat / สกิลที่ผู้เล่นเลือกมาใส่ */
 export function bgOf(c) {
   const bg = D.bg[c.bgId];
@@ -467,7 +479,7 @@ function resources(c, x) {
 // ---------- คำนวณทั้งหมด ----------
 export function compute(c) {
   const LI = levelInfo(c), CLs = classLevels(c);
-  const cls = D.cls[c.classId], sp = D.sp[c.speciesId], bg = bgOf(c);
+  const cls = D.cls[c.classId], sp = spOf(c), bg = bgOf(c);
   const L = LI.length, CL = CLs[c.classId] || L, pb = pbOf(L), ch = c.choices || {}, so = c.speciesOpt || {};
   const warn = [];
   const sub = subOf(c), isSrdSub = srdSub(c);
@@ -497,7 +509,7 @@ export function compute(c) {
   featIds.push(...levelFeats);
 
   // สกิล
-  const prof = new Set([...(bg?.skills || []), ...(c.skills || [])]);
+  const prof = new Set([...(bg?.skills || []), ...(c.skills || []), ...(sp?.traits || []).flatMap(t => t.skills || [])]);
   if (so.skill) prof.add(so.skill);
   for (const k of ['skilled', 'skilled2']) (ch[k] || []).forEach(s => SKILL_AB[s] && prof.add(s));
   for (const li of LI) if ((li.asi || li.boon) && li.e.feat === 'skilled') (li.e.sub?.skills || []).forEach(s => SKILL_AB[s] && prof.add(s));
@@ -585,6 +597,7 @@ export function compute(c) {
   let init = initParts.reduce((t, q) => t + q[1], 0);
   let darkvision = { dragonborn: 60, dwarf: 120, elf: 60, gnome: 60, orc: 120, tiefling: 60 }[c.speciesId] || 0;
   if (so.lineage === 'Drow') darkvision = 120;
+  if (sp?.open) darkvision = sp.darkvision || 0;
 
   // อาวุธ
   const rule = cls ? weaponRule(c) : 'simple';
@@ -868,7 +881,8 @@ export function missing(c) {
     if (!D.feat[ch0.bgFeat]) out.push('เลือก Origin Feat ของ Background');
     if (cb.skillPick && (ch0.bgSkills || []).length < cb.skillPick.n) out.push(`เลือกสกิลของ Background (${cb.skillPick.n})`);
   }
-  if (SPECIES_OPT[c.speciesId] && !c.speciesOpt?.[SPECIES_OPT[c.speciesId].key]) out.push(`เลือก ${SPECIES_OPT[c.speciesId].label}`);
+  const so0 = spOpt(c.speciesId);
+  if (so0 && !c.speciesOpt?.[so0.key]) out.push(`เลือก ${so0.label}`);
   if (c.speciesId === 'human' && !c.speciesOpt?.feat) out.push('เลือก Origin Feat (Human Versatile)');
   if (c.speciesId === 'human' && !c.speciesOpt?.skill) out.push('เลือกสกิล (Human Skillful)');
   if (c.speciesId === 'elf' && !c.speciesOpt?.skill) out.push('เลือกสกิล (Keen Senses)');

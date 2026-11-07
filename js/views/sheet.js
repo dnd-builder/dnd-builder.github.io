@@ -667,7 +667,7 @@ export function renderSheet(root, c, tab, nav) {
     }
     if (show('species') && x.sp) {
       out.push(h('h2.sec', x.sp.name));
-      for (const t of x.sp.traits) out.push(featureCard({ name: t.name, text: t.text, th: D.th.species?.[x.sp.id]?.f?.[t.id], full: ['species', [x.sp.id, t.id]] }), ...featureMath(t.name, x));
+      for (const t of x.sp.traits) out.push(featureCard({ name: t.name, text: t.text, th: D.th.species?.[x.sp.id]?.f?.[t.id] || (x.sp.open ? { t: t.t } : null), full: x.sp.open ? null : ['species', [x.sp.id, t.id]], pack: x.sp.open ? x.sp.pack : null, open: x.sp.open }), ...featureMath(t.name, x));
     }
     if (show('feats') && x.featIds.length) {
       out.push(h('h2.sec', 'Feats'));

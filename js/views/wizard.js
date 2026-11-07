@@ -6,7 +6,7 @@ import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
   SRD_PICKS, compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub, setSub,
-  bgOf,
+  bgOf, spOf, spOpt,
 } from '../rules.js';
 import { featIdOf, listPacks, savePack, srcTag, openDocs, openOn, setOpen } from '../packs.js';
 import { levelEditor, levelSummary, spellGaps } from './levelup.js';
@@ -24,7 +24,7 @@ const STEPS = [
   { id: 'spells', en: 'SPELLS', label: 'เวทมนตร์' },
   { id: 'done', en: 'SUMMARY', label: 'สรุป' },
 ];
-const SPECIES_MISS = /Human|Keen Senses|^เลือก (Draconic Ancestry|Elven Lineage|Fiendish Legacy|Giant Ancestry|Gnomish Lineage)/;
+const SPECIES_MISS = /Human|Keen Senses|^เลือก (Subrace|Draconic Ancestry|Elven Lineage|Fiendish Legacy|Giant Ancestry|Gnomish Lineage)/;
 
 const thc = id => D.th.classes?.[id] || {};
 const ths = id => D.th.species?.[id] || {};
@@ -424,29 +424,36 @@ export function renderWizard(root, c, stepId, nav) {
   }
 
   // ---------- 3. Species ----------
+  function lineageInfo(sp, name) {
+    const l = sp.lineages.find(x => x.name === name);
+    if (!l) return null;
+    return h('div.lineage-info', ths(sp.id).ln?.[name] ? h('p.th', ths(sp.id).ln[name]) : null, h('p.muted.small', 'ได้เพิ่ม: ' + (l.traits.map(t => t.name).join(', ') || '—')));
+  }
   function species() {
     const out = [intro('SPECIES · เผ่าพันธุ์', 'เผ่าพันธุ์ของตัวละคร ให้ความสามารถพิเศษติดตัว เช่น มองในที่มืดได้ หรือพ่นไฟได้')];
     const grid = h('div.grid', D.species.map(s => choiceCard({
-      id: s.id, iconName: s.id, title: s.name, sub: `${s.size.split(' ')[0]} · Speed ${s.speed}`,
+      id: s.id, iconName: s.open ? 'human' : s.id, title: s.name, sub: packSub(s, `${s.sizeChoice ? 'Small/Medium' : s.size.split(' ')[0]} · Speed ${s.speed}`),
       desc: ths(s.id).tag, selected: c.speciesId === s.id,
       onClick: () => { if (c.speciesId !== s.id) { c.speciesId = s.id; c.speciesOpt = {}; } changed(); },
     })));
     const sp = D.sp[c.speciesId];
-    out.push(...[].concat(pickHead('pick-sp', sp && { icon: sp.id, title: sp.name, sub: ths(sp.id).desc }, 'Species', grid)));
+    out.push(...[].concat(pickHead('pick-sp', sp && { icon: sp.open ? 'human' : sp.id, title: sp.name, sub: ths(sp.id).desc }, 'Species', grid)));
     const nLang = 2 + ((classLevels(c).ranger || 0) >= 2 ? 2 : 0);
     const langAcc = () => acc({ key: 'sp-lang', title: `ภาษา (${c.languages.length}/${nLang})`, sub: ['Common', ...c.languages].join(', '), need: c.languages.length < nLang, done: c.languages.length >= nLang, openSet },
       h('p.muted', `รู้ภาษา Common อยู่แล้ว เลือกเพิ่มอีก ${nLang} ภาษา${nLang > 2 ? ' (รวม 2 ภาษาจาก Deft Explorer ของ Ranger)' : ''}`),
       chips(LANGS, c.languages, nLang, v => { c.languages = v; changed(); }));
     if (!sp) { out.push(langAcc()); return out; }
     const so = c.speciesOpt;
-    const opt = SPECIES_OPT[sp.id];
+    const opt = spOpt(sp.id);
     if (opt) {
       out.push(acc({ key: 'sp-opt', title: opt.label, sub: so[opt.key] || null, need: !so[opt.key], done: !!so[opt.key], openSet },
         chips(opt.opts.map(o => o[0]), so[opt.key] ? [so[opt.key]] : [], 1, v => { so[opt.key] = v[0]; changed(); },
           { labels: Object.fromEntries(opt.opts.map(o => [o[0], o[1] ? `${o[0]} (${o[1]})` : o[0]])) }),
+        sp.lineages && so[opt.key] ? lineageInfo(sp, so[opt.key]) : null,
         opt.ability ? [h('p.muted', 'ค่าพลังที่ใช้ร่ายเวทของเผ่า'), chips(['int', 'wis', 'cha'], so.ability ? [so.ability] : [], 1, v => { so.ability = v[0]; changed(); }, { labels: { int: 'INT', wis: 'WIS', cha: 'CHA' } })] : null));
     }
-    if (SIZE_CHOICE.includes(sp.id)) out.push(acc({ key: 'sp-size', title: 'ขนาดตัว', sub: so.size || 'Medium', openSet }, chips(['Medium', 'Small'], [so.size || 'Medium'], 1, v => { so.size = v[0]; changed(); })));
+    if (sp.open) out.push(h('div.tip-box', h('p.small', `📖 ${sp.name} มาจาก ${sp.pack} (กฎ 2014) — ตัดโบนัสค่าพลังของเผ่าออกแล้ว เพราะกฎ 2024 ได้โบนัสจาก Background แทน`, sp.lang ? ` · ภาษาเดิมของเผ่า: ${sp.lang.replace(/\*/g, '')}` : '')));
+    if (SIZE_CHOICE.includes(sp.id) || sp.sizeChoice) out.push(acc({ key: 'sp-size', title: 'ขนาดตัว', sub: so.size || 'Medium', openSet }, chips(['Medium', 'Small'], [so.size || 'Medium'], 1, v => { so.size = v[0]; changed(); })));
     if (sp.id === 'elf') out.push(acc({ key: 'sp-keen', title: 'Keen Senses', sub: so.skill || 'เลือกสกิล 1 อย่าง', need: !so.skill, done: !!so.skill, openSet }, chips(['Insight', 'Perception', 'Survival'], so.skill ? [so.skill] : [], 1, v => { so.skill = v[0]; changed(); })));
     if (sp.id === 'human') {
       out.push(acc({ key: 'sp-skillful', title: 'Skillful', sub: so.skill || 'เลือกสกิลอะไรก็ได้ 1 อย่าง', need: !so.skill, done: !!so.skill, openSet }, chips(SKILLS.map(s => s[0]), so.skill ? [so.skill] : [], 1, v => { so.skill = v[0]; changed(); })));
@@ -463,7 +470,7 @@ export function renderWizard(root, c, stepId, nav) {
     }
     out.push(langAcc());
     out.push(h('h3.sec2', h('span', 'SPECIES TRAITS'), h('small', 'ความสามารถของเผ่า · แตะเพื่ออ่าน')));
-    out.push(sp.traits.map(t => { const th = ths(sp.id).f?.[t.id]; return acc({ key: 'sp-t-' + t.id, title: t.name, sub: th?.s, openSet }, featureCard({ name: t.name, text: t.text, th, full: ['species', [sp.id, t.id]] })); }));
+    out.push(spOf(c).traits.map(t => { const th = ths(sp.id).f?.[t.id]; return acc({ key: 'sp-t-' + t.id, title: t.name, sub: th?.s, openSet }, featureCard({ name: t.name, text: t.text, th: th || (sp.open ? { t: t.t } : null), full: sp.open ? null : ['species', [sp.id, t.id]], pack: sp.open ? sp.pack : null, open: sp.open })); }));
     return out;
   }
 
