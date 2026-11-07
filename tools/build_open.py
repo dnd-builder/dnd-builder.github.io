@@ -247,7 +247,7 @@ def spells(docs):
             comp = ', '.join(x for x, k in (('V', 'requires_verbal_components'), ('S', 'requires_somatic_components'), ('M', 'requires_material_components')) if str(f.get(k)) == 'True')
             if 'M' in comp and f.get('material'): comp += f' ({clean(f["material"]).rstrip(".")})'
             classes = sorted({ {'sorceror': 'sorcerer'}.get(c.strip().lower(), c.strip().lower()) for c in (f.get('dnd_class') or '').split(',')} & CLS)
-            text = clean(f.get('desc') or '')
+            text = re.sub(r'^Deep Magic: [\w\- ]+?(?= [A-Z])\s*', '', clean(f.get('desc') or ''))
             if (f.get('higher_level') or '').strip(): text += '\n\n**Using a Higher-Level Spell.** ' + clean(f['higher_level'])
             lv = int(f.get('spell_level') or 0)
             out.append({'id': f'open:{doc}:{slug(name)}', 'src': doc, 'name': name, 'level': lv, 'school': (f.get('school') or '').strip().title(),
@@ -275,6 +275,6 @@ if __name__ == '__main__':
     subs = subclasses()
     json.dump(subs, open(os.path.join(OUT, 'subclasses.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     json.dump(docs(), open(os.path.join(OUT, 'docs.json'), 'w'), ensure_ascii=False, indent=1)
-    for k, fn in (('backgrounds', backgrounds), ('feats', feats), ('species', species), ('spells', lambda: spells(['toh', 'o5e', 'kp', 'warlock']))):
+    for k, fn in (('backgrounds', backgrounds), ('feats', feats), ('species', species), ('spells', lambda: spells(['toh', 'o5e', 'kp', 'warlock', 'dmag', 'dmag-e']))):
         v = fn(); json.dump(v, open(os.path.join(OUT, k + '.json'), 'w'), ensure_ascii=False, separators=(',', ':')); print(k, len(v))
     print('subclasses', len(subs), 'features', sum(len(s['features']) for s in subs))
