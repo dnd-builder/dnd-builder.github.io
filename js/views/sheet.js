@@ -1,5 +1,6 @@
 // ใบตัวละครสำหรับใช้ตอนเล่น — โครงแบบ D&D Beyond: สแตททั้งหมดอยู่ส่วนบน + แท็บด้านล่าง
 // ใช้เต๋าจริง: แตะอะไรก็ได้ = เปิดการ์ดบอกสูตร (เว็บไม่ทอยให้)
+import { srcTag } from '../packs.js';
 import { D, loadAnimals } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet, uid } from '../util.js';
 import { md } from '../md.js';
@@ -683,7 +684,7 @@ export function renderSheet(root, c, tab, nav) {
     if (x.bg) {
       const th = D.th.backgrounds?.[x.bg.id];
       out.push(head('BACKGROUND', 'ภูมิหลัง'), h('div.card',
-        h('b', x.bg.name), x.bg.pack ? h('span.pack-badge', '📦 ' + x.bg.pack) : null,
+        h('b', x.bg.name), x.bg.pack ? h('span.pack-badge', srcTag(x.bg)) : null,
         th?.s ? h('p.th', th.s) : null,
         h('dl.kv',
           h('dt', 'ค่าพลังที่ได้โบนัส'), h('dd', (x.bg.abilities || []).join(', ')),

@@ -54,8 +54,12 @@ export const featIdOf = name => {
 const META = 'hh.meta.v1';
 const metaGet = () => { try { return JSON.parse(localStorage.getItem(META)) || {}; } catch { return {}; } };
 /** หนังสือที่มีของให้ใช้ → [{id, title, n}] */
-export const openDocs = () => Object.entries((D.open?.subclasses || []).reduce((o, s) => ((o[s.src] = (o[s.src] || 0) + 1), o), {}))
-  .map(([id, n]) => ({ id, n, title: docTitle(id) }));
+export const OPEN_GROUPS = [['subclasses', 'ซับคลาส'], ['backgrounds', 'Background'], ['feats', 'Feat']];
+export function openDocs() {
+  const o = {};
+  for (const [g] of OPEN_GROUPS) for (const x of D.open?.[g] || []) ((o[x.src] ||= {})[g] = (o[x.src][g] || 0) + 1);
+  return Object.entries(o).map(([id, n]) => ({ id, n, title: docTitle(id), label: OPEN_GROUPS.filter(([g]) => n[g]).map(([g, l]) => `${l} ${n[g]}`).join(' · ') }));
+}
 export const docTitle = id => D.open?.docs?.[id]?.title || id;
 /** เปิดใช้หนังสือนี้ไหม (ไม่ใส่ = ดูสวิตช์รวม) — ค่าเริ่มต้นเปิดทั้งหมด */
 export const openOn = id => { const m = metaGet(); return m.openAll !== false && (!id || !m.openOff?.includes(id)); };
@@ -116,9 +120,14 @@ export function applyPacks() {
   D.openSub ||= Object.fromEntries((D.open?.subclasses || []).map(s => [s.id, openSub(s)]));
   const openSubs = {};
   for (const s of Object.values(D.openSub)) if (D.cls[s.classId] && openOn(s.src)) (openSubs[s.classId] ||= []).push(s);
+  // Background / Feat จากหนังสือ OGL
+  const openBg = (D.open?.backgrounds || []).map(b => ({ ...b, pack: docTitle(b.src), open: b.src, tool: b.tool || '—', equipment: bgEquipText(b) }));
+  const openFeat = (D.open?.feats || []).map(f => ({ ...f, pack: docTitle(f.src), open: f.src, tag: `${f.category} Feat (Prerequisite: ${f.prereq})` }));
+  for (const b of openBg) { D.th.backgrounds[b.id] = { desc: D.open.th.backgrounds?.[b.id]?.s || '' }; if (openOn(b.src)) bgs.push(b); }
+  for (const f of openFeat) { const t = D.open.th.feats?.[f.id] || {}; D.th.feats[f.id] = { t: t.t || f.t, s: t.s || '', tip: t.tip }; if (openOn(f.src)) feats.push(f); }
   D.backgrounds = bgs; D.feats = feats; D.spells = spells;
   const idx = arr => Object.fromEntries(arr.map(x => [x.id, x]));
-  D.bg = idx(bgs); D.feat = idx(feats); D.spell = idx(spells);
+  D.bg = { ...idx(openBg), ...idx(bgs) }; D.feat = { ...idx(openFeat), ...idx(feats) }; D.spell = idx(spells);   // ของ OGL ที่ปิดเล่มยังหาเจอ (ตัวละครเดิมเปิดได้)
   D.spellByName = Object.fromEntries(spells.map(s => [s.name.toLowerCase(), s]));
   D.featByName = Object.fromEntries(feats.map(f => [f.name.toLowerCase(), f]));
   // ซับคลาส: [SRD, ...รายชื่อ PHB 2024 (ใช้ข้อมูลแพ็กที่ชื่อตรงกัน ไม่งั้นเป็นซับคลาสว่าง), ...ซับคลาสแพ็กอื่น ๆ]
@@ -159,6 +168,7 @@ export function usedPackItems(chars) {
     if (c.bgId) want.backgrounds.add(c.bgId);
     const bg = D.bg[c.bgId];
     if (bg) want.feats.add(featIdOf(bg.feat));
+    if (c.choices?.bgFeat) want.feats.add(c.choices.bgFeat);
     if (c.speciesOpt?.feat) want.feats.add(c.speciesOpt.feat);
     if (c.choices?.fightingStyle) want.feats.add(c.choices.fightingStyle);
     (c.feats || []).forEach(f => want.feats.add(f.id || f));

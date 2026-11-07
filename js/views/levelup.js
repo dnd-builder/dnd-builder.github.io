@@ -87,7 +87,7 @@ export function levelEditor(c, i, changed) {
     out.push(h('label.lbl', li.boon ? 'Epic Boon (หรือ feat อื่นที่เข้าเงื่อนไข)' : 'Ability Score Improvement หรือ Feat'),
       h('select.inp', { onchange: ev => { if (ev.target.value) e.feat = ev.target.value; else delete e.feat; e.asi = {}; delete e.sub; changed(); } },
         h('option', { value: '' }, '— เลือก —'),
-        opts.map(f => h('option', { value: f.id, selected: f.id === e.feat }, `${f.pack ? '📦 ' : ''}${f.name} (${f.category})`))));
+        opts.map(f => h('option', { value: f.id, selected: f.id === e.feat }, `${f.pack ? (f.open ? '📖 ' : '📦 ') : ''}${f.name} (${f.category})`))));
     const f = D.feat[e.feat];
     if (f) {
       const r = featAsiRule(f);

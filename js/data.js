@@ -4,6 +4,7 @@ export const D = {};
 const SRD = ['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal', 'glossary', 'weights'];
 const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc', 'glossary', 'help'];
 
+const OPEN = ['subclasses', 'backgrounds', 'feats'];   // คอนเทนต์เปิด (OGL) data/open/<กลุ่ม>.json
 const get = p => fetch(p).then(r => { if (!r.ok) throw new Error(p); return r.json(); });
 
 export async function loadData() {
@@ -12,10 +13,11 @@ export async function loadData() {
     Promise.all(TH.map(k => get(`data/th/${k}.json`).catch(() => ({})))),
     get('data/icons.json'),
     get('data/subclass-list.json').catch(() => ({})),
-    Promise.all([get('data/open/docs.json'), get('data/open/subclasses.json'), get('data/th/open/subclasses.json').catch(() => ({}))]).catch(() => null),
+    Promise.all([get('data/open/docs.json'), ...OPEN.map(k => get(`data/open/${k}.json`)), ...OPEN.map(k => get(`data/th/open/${k}.json`).catch(() => ({})))]).catch(() => null),
   ]);
   // คอนเทนต์เปิด (OGL 1.0a จาก Open5e) → ผสมใน applyPacks()
-  D.open = open ? { docs: open[0], subclasses: open[1], th: { subclasses: open[2] } } : { docs: {}, subclasses: [], th: {} };
+  D.open = { docs: open?.[0] || {}, th: {} };
+  OPEN.forEach((k, i) => { D.open[k] = open?.[1 + i] || []; D.open.th[k] = open?.[1 + OPEN.length + i] || {}; });
   D.subList = subList;   // ชื่อซับคลาส PHB 2024 ครบ 48 (ชื่ออย่างเดียว) → {classId: [ชื่อ]}
   SRD.forEach((k, i) => (D[k] = srd[i]));
   D.th = {};

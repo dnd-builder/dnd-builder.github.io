@@ -218,8 +218,15 @@ export function featAsiRule(f) {
 const REPEATABLE = new Set(['ability-score-improvement', 'skilled', 'magic-initiate']);
 export const featRepeatable = f => !!f && (!!f.repeatable || REPEATABLE.has(f.id) || /Repeatable\./.test(f.text || ''));
 const hasFightingStyle = c => Object.entries(classLevels(c)).some(([id, n]) => FIGHTING_STYLE_AT[id] && n >= FIGHTING_STYLE_AT[id]);
+/** Background ที่ใช้จริง — แบบ custom (OGL 2014) เอาค่าพลัง / Origin Feat / สกิลที่ผู้เล่นเลือกมาใส่ */
+export function bgOf(c) {
+  const bg = D.bg[c.bgId];
+  if (!bg?.custom) return bg;
+  const ch = c.choices || {};
+  return { ...bg, abilities: (ch.bgAbil || []).length === 3 ? ch.bgAbil : [], feat: D.feat[ch.bgFeat]?.name || '', skills: [...new Set([...bg.skills, ...(ch.bgSkills || [])])] };
+}
 function originFeatIds(c) {
-  const bg = D.bg[c.bgId], so = c.speciesOpt || {};
+  const bg = bgOf(c), so = c.speciesOpt || {};
   const out = [];
   if (bg) out.push(D.feat[featIdOf(bg.feat)]?.id);
   if (c.speciesId === 'human' && so.feat) out.push(so.feat);
@@ -460,7 +467,7 @@ function resources(c, x) {
 // ---------- คำนวณทั้งหมด ----------
 export function compute(c) {
   const LI = levelInfo(c), CLs = classLevels(c);
-  const cls = D.cls[c.classId], sp = D.sp[c.speciesId], bg = D.bg[c.bgId];
+  const cls = D.cls[c.classId], sp = D.sp[c.speciesId], bg = bgOf(c);
   const L = LI.length, CL = CLs[c.classId] || L, pb = pbOf(L), ch = c.choices || {}, so = c.speciesOpt || {};
   const warn = [];
   const sub = subOf(c), isSrdSub = srdSub(c);
@@ -855,6 +862,12 @@ export function missing(c) {
     const sb = subOf(c, id);
     if (sb?.pack && L >= 3) for (const f of sb.features) if (f.level <= L && f.opts?.length && !f.opts.some(o => o.name === ch.packOpt?.[f.id])) out.push(`เลือก ${f.name} (Lv ${f.level})` + tag);
   }
+  const cb = D.bg[c.bgId], ch0 = c.choices || {};
+  if (cb?.custom) {
+    if ((ch0.bgAbil || []).length !== 3) out.push('เลือกค่าพลัง 3 ตัวของ Background');
+    if (!D.feat[ch0.bgFeat]) out.push('เลือก Origin Feat ของ Background');
+    if (cb.skillPick && (ch0.bgSkills || []).length < cb.skillPick.n) out.push(`เลือกสกิลของ Background (${cb.skillPick.n})`);
+  }
   if (SPECIES_OPT[c.speciesId] && !c.speciesOpt?.[SPECIES_OPT[c.speciesId].key]) out.push(`เลือก ${SPECIES_OPT[c.speciesId].label}`);
   if (c.speciesId === 'human' && !c.speciesOpt?.feat) out.push('เลือก Origin Feat (Human Versatile)');
   if (c.speciesId === 'human' && !c.speciesOpt?.skill) out.push('เลือกสกิล (Human Skillful)');
@@ -885,7 +898,7 @@ export function newCharacter() {
 
 /** สร้างรายการของจากตัวเลือก A/B ของคลาสและ background */
 export function rebuildEquipment(c) {
-  const cls = D.cls[c.classId], bg = D.bg[c.bgId];
+  const cls = D.cls[c.classId], bg = bgOf(c);
   const items = [], e = c.equipment;
   let gp = 0;
   for (const [txt, opt] of [[cls?.core['Starting Equipment'], e.classOpt], [bg?.equipment, e.bgOpt]]) {

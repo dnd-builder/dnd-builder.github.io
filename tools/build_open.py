@@ -140,6 +140,48 @@ def subclasses():
             out.append(s)
     return out
 
+SKILLS = ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History', 'Insight', 'Intimidation', 'Investigation',
+          'Medicine', 'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival']
+def skills_in(t):
+    return sorted([k for k in SKILLS if re.search(r'\b' + k + r'\b', t, re.I)], key=lambda k: t.lower().index(k.lower()))
+
+def backgrounds():
+    """Background 2014 → กฎ 2024 แบบ "สร้างเอง": ผู้เล่นเลือกค่าพลัง 3 ตัว + Origin Feat 1 อัน (custom)"""
+    out = []
+    for doc in DOCS:
+        for e in load(doc, 'Background'):
+            f = e['fields']; name = f['name'].strip(); sk = f.get('skill_proficiencies') or ''
+            m = re.search(r'\b(plus|your choice)\b', sk, re.I)
+            fixed, pick = skills_in(sk[:m.start()] if m else sk), None
+            if m:
+                pick = {'n': 2 if re.search(r'\btwo\b', sk, re.I) else 1, 'from': skills_in(sk[m.start():])}
+            if not fixed and not pick: pick = {'n': 2, 'from': []}          # ไม่มีสกิล → เลือก 2 อย่างอะไรก็ได้ (กฎ 2024)
+            tool = (f.get('tool_proficiencies') or '').strip().rstrip('.')
+            if re.match(r'(none|no additional)', tool, re.I): tool = ''
+            lang = (f.get('languages') or '').strip().rstrip('.')
+            if re.match(r'(none|no additional)', lang, re.I): lang = ''
+            b = {'id': f'open:{doc}:{slug(name)}', 'src': doc, 'name': name, 'custom': True, 'abilities': [], 'feat': '',
+                 'skills': fixed, 'tool': tool, 'equipA': clean(f.get('equipment') or ''), 'gpB': 50, 'text': clean(f.get('desc') or '')}
+            if pick: b['skillPick'] = pick
+            if lang: b['lang'] = lang
+            if f.get('feature'): b['feature'] = {'name': f['feature'].strip(), 'text': clean(f.get('feature_desc') or '')}
+            out.append(b)
+    return out
+
+def feats():
+    """Feat 2014 → General Feat ของกฎ 2024 (เลเวล 4+ ตามเงื่อนไขเดิม)"""
+    out = []
+    for doc in DOCS:
+        for e in load(doc, 'Feat'):
+            f = e['fields']; name = f['name'].strip()
+            eff = json.loads(f.get('effects_desc_json') or '[]')
+            text = clean(f.get('desc') or '') + ('\n\n' + '\n'.join(x.strip() for x in eff) if eff else '')
+            pre = re.sub(r'^\*|\*$', '', (f.get('prerequisite') or '').strip()).replace('*', '').strip()
+            if re.match(r'n/?a$', pre, re.I): pre = ''
+            out.append({'id': f'open:{doc}:{slug(name)}', 'src': doc, 'name': name, 'category': 'General',
+                        'prereq': 'Level 4+' + (f'; {pre}' if pre else ''), 't': act_of(text), 'text': text})
+    return out
+
 def docs():
     out = {}
     for d in DOCS + SPELL_DOCS:
@@ -160,4 +202,6 @@ if __name__ == '__main__':
     subs = subclasses()
     json.dump(subs, open(os.path.join(OUT, 'subclasses.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     json.dump(docs(), open(os.path.join(OUT, 'docs.json'), 'w'), ensure_ascii=False, indent=1)
+    for k, fn in (('backgrounds', backgrounds), ('feats', feats)):
+        v = fn(); json.dump(v, open(os.path.join(OUT, k + '.json'), 'w'), ensure_ascii=False, separators=(',', ':')); print(k, len(v))
     print('subclasses', len(subs), 'features', sum(len(s['features']) for s in subs))

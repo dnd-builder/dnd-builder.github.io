@@ -6,6 +6,7 @@ import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
   SRD_PICKS, compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub, setSub,
+  bgOf,
 } from '../rules.js';
 import { featIdOf, listPacks, savePack, srcTag, openDocs, openOn, setOpen } from '../packs.js';
 import { levelEditor, levelSummary } from './levelup.js';
@@ -79,9 +80,9 @@ export function renderWizard(root, c, stepId, nav) {
   function stepNeed(id) {
     const ms = missing(c);
     const lvMiss = m => / \(Lv \d+\)$/.test(m) && /ASI|Epic Boon|ใส่แต้ม|Skilled|Magic Initiate|ผลทอย HP/.test(m);
-    if (id === 'class') return !c.classId || ms.some(m => !SPECIES_MISS.test(m) && !lvMiss(m) && !/Book of Shadows/.test(m));
+    if (id === 'class') return !c.classId || ms.some(m => !SPECIES_MISS.test(m) && !lvMiss(m) && !/Book of Shadows|ของ Background/.test(m));
     if (id === 'species') return !c.speciesId || ms.some(m => SPECIES_MISS.test(m)) || c.languages.length < 2 + ((classLevels(c).ranger || 0) >= 2 ? 2 : 0);
-    if (id === 'background') return !c.bgId || !Object.values(c.abilities.bonus || {}).some(Boolean);
+    if (id === 'background') return !c.bgId || !Object.values(c.abilities.bonus || {}).some(Boolean) || ms.some(m => /ของ Background/.test(m));
     if (id === 'abilities') return c.abilities.method !== 'pointbuy' && Object.keys(c.abilities.assign || {}).length < 6;
     if (id === 'levels') return ms.some(lvMiss);
     if (id === 'spells') {
@@ -205,7 +206,7 @@ export function renderWizard(root, c, stepId, nav) {
 
     if (primary) {
       const list = cls.skillList === 'any' ? SKILLS.map(s => s[0]) : cls.skillList;
-      const bgSkills = D.bg[c.bgId]?.skills || [];
+      const bgSkills = bgOf(c)?.skills || [];
       put([], `สกิลจากคลาส (${c.skills.length}/${cls.skillChoose})`, `เลือก ${cls.skillChoose} อย่าง — สกิลที่ได้จาก Background แล้วจะขีดฆ่าไว้ เลือกซ้ำไม่ได้`, c.skills.length < cls.skillChoose,
         chips(list, c.skills, cls.skillChoose, v => { c.skills = v; changed(); }, { locked: bgSkills.filter(s => !c.skills.includes(s)) }));
     } else {
@@ -336,15 +337,40 @@ export function renderWizard(root, c, stepId, nav) {
   }
 
   // ---------- 2. Background ----------
+  /** Background จากหนังสือ OGL (กฎ 2014) → เลือกค่าพลัง 3 ตัว + Origin Feat + สกิลที่ให้เลือก ตามกฎ 2024 "สร้าง Background เอง" */
+  function customBg(bg) {
+    const ch = c.choices, abil = ch.bgAbil || [], pick = bg.skillPick;
+    const origin = D.feats.filter(f => f.category === 'Origin');
+    const out = [h('div.tip-box', h('p.small', `📖 ${bg.name} มาจาก ${bg.pack} (กฎ 2014) ซึ่งไม่ได้กำหนดโบนัสค่าพลังและ Origin Feat ไว้ — ตามกฎ 2024 ให้เลือกค่าพลัง 3 ตัว กับ Origin Feat 1 อย่างเอง`))];
+    out.push(acc({ key: 'bg-abil', title: 'ค่าพลังที่ได้โบนัส (เลือก 3)', sub: abil.length ? abil.map(a => ABIL_SHORT[a]).join(' · ') : 'ยังไม่ได้เลือก', need: abil.length !== 3, done: abil.length === 3, openSet },
+      chips(ABIL, abil, 3, v => { ch.bgAbil = v; c.abilities.bonus = {}; c.abilities.plus2 = null; c.abilities.plus1 = null; changed(); }, { labels: Object.fromEntries(ABIL.map(a => [a, ABIL_EN[a]])) })));
+    if (pick) {
+      const from = (pick.from.length ? pick.from : SKILLS.map(s => s[0])).filter(s => !bg.skills.includes(s)), cur = ch.bgSkills || [];
+      out.push(acc({ key: 'bg-skill', title: `สกิลของ Background (เลือก ${pick.n})`, sub: [...bg.skills, ...cur].join(' · ') || 'ยังไม่ได้เลือก', need: cur.length < pick.n, done: cur.length >= pick.n, openSet },
+        bg.skills.length ? h('p.muted.small', 'ได้แน่ ๆ: ' + bg.skills.join(', ')) : null,
+        chips(from, cur, pick.n, v => { ch.bgSkills = v; changed(); })));
+    }
+    const f = D.feat[ch.bgFeat];
+    out.push(acc({ key: 'bg-ofeat', title: 'Origin Feat (เลือก 1)', sub: f ? f.name + (featTh(f.id)?.s ? ' — ' + featTh(f.id).s : '') : 'ยังไม่ได้เลือก', need: !f, done: !!f, openSet },
+      h('div.grid', origin.map(o => choiceCard({ id: o.id, iconName: 'feat', title: o.name, desc: featTh(o.id)?.s, selected: ch.bgFeat === o.id, onClick: () => { ch.bgFeat = o.id; changed(); } })))));
+    if (bg.feature || bg.lang || bg.text) out.push(acc({ key: 'bg-orig', title: 'ข้อมูลต้นฉบับ (2014)', sub: bg.feature ? `ฟีเจอร์: ${bg.feature.name}` : null, openSet },
+      D.th.backgrounds?.[bg.id]?.desc ? h('p', D.th.backgrounds[bg.id].desc) : null,
+      bg.feature ? featureCard({ name: bg.feature.name, text: bg.feature.text, th: D.open.th.backgrounds?.[bg.id]?.f ? { s: D.open.th.backgrounds[bg.id].f } : null, tag: 'ฟีเจอร์ Background (2014) — ใช้ได้ถ้า DM อนุญาต', pack: bg.pack, open: bg.open }) : null,
+      bg.lang ? h('p.small', h('b', 'ภาษา (2014): '), bg.lang, h('span.muted', ' — กฎ 2024 ไม่ให้ภาษาจาก Background ถาม DM ก่อน')) : null,
+      original(bg.text, `ต้นฉบับ (EN) — ${bg.pack} (OGL)`)));
+    return out;
+  }
+
   function background() {
     const out = [intro('BACKGROUND · ภูมิหลัง', 'ตัวละครเคยทำอะไรมาก่อนออกผจญภัย Background ให้โบนัสค่าพลัง สกิล 2 อย่าง เครื่องมือ 1 อย่าง และ Origin Feat 1 อย่าง')];
     const grid = [h('div.grid', D.backgrounds.map(bg => choiceCard({
-      id: bg.id, iconName: 'background', title: bg.name, sub: packSub(bg, bg.abilities.map(a => ABIL_SHORT[a]).join(' · ')),
+      id: bg.id, iconName: 'background', title: bg.name, sub: packSub(bg, bg.custom ? 'เลือกค่าพลัง + Feat เอง' : bg.abilities.map(a => ABIL_SHORT[a]).join(' · ')),
       desc: D.th.backgrounds?.[bg.id]?.desc, selected: c.bgId === bg.id,
-      onClick: () => { if (c.bgId !== bg.id) { c.bgId = bg.id; c.abilities.bonus = {}; c.abilities.plus2 = null; c.abilities.plus1 = null; c.equipment.bgOpt = 'A'; rebuildEquipment(c); } changed(); },
+      onClick: () => { if (c.bgId !== bg.id) { c.bgId = bg.id; c.abilities.bonus = {}; delete c.choices.bgAbil; delete c.choices.bgFeat; delete c.choices.bgSkills; c.abilities.plus2 = null; c.abilities.plus1 = null; c.equipment.bgOpt = 'A'; rebuildEquipment(c); } changed(); },
     }))), h('p.muted.small', 'ข้อมูลฟรี (SRD) มี Background 4 แบบ — Background อื่นจากหนังสือ (เช่น Guard) เพิ่มเองได้ที่ ', h('a', { href: '#/packs' }, 'Content Pack'))];
-    const bg = D.bg[c.bgId];
+    const bg = bgOf(c);
     out.push(...[].concat(pickHead('pick-bg', bg && { icon: 'background', title: bg.name, sub: D.th.backgrounds?.[bg.id]?.desc }, 'Background', grid)));
+    if (bg?.custom) out.push(...customBg(D.bg[c.bgId]));
     if (bg) {
       const A = c.abilities;
       const mode = A.bonusMode || '21';
@@ -355,7 +381,7 @@ export function renderWizard(root, c, stepId, nav) {
         changed();
       };
       const haveBonus = Object.values(A.bonus || {}).some(Boolean);
-      out.push(acc({ key: 'bg-bonus', title: 'Ability Score Increases', sub: haveBonus ? Object.entries(A.bonus).filter(([, n]) => n).map(([a, n]) => `${ABIL_SHORT[a]} +${n}`).join(' · ') : 'โบนัสค่าพลัง', need: !haveBonus, done: haveBonus, openSet },
+      if (bg.abilities.length === 3) out.push(acc({ key: 'bg-bonus', title: 'Ability Score Increases', sub: haveBonus ? Object.entries(A.bonus).filter(([, n]) => n).map(([a, n]) => `${ABIL_SHORT[a]} +${n}`).join(' · ') : 'โบนัสค่าพลัง', need: !haveBonus, done: haveBonus, openSet },
         h('p.muted', `เพิ่มค่าพลังจาก ${bg.abilities.map(a => ABIL_EN[a]).join(', ')} — จะเลือก +2 ให้ตัวหนึ่งกับ +1 ให้อีกตัว หรือ +1 ทั้งสามตัวก็ได้`),
         h('div.seg', [['21', '+2 / +1'], ['111', '+1 / +1 / +1']].map(([k, l]) => h('button.seg-btn' + (mode === k ? '.on' : ''), { type: 'button', onclick: () => { A.bonusMode = k; setBonus(); } }, l))),
         mode === '21' ? h('div.bonus-pick',
@@ -366,7 +392,7 @@ export function renderWizard(root, c, stepId, nav) {
         bg.id === 'soldier' ? [h('p.muted', 'Gaming Set ที่เล่นเป็น:'), chips(['Dice Set', 'Dragonchess Set', 'Playing Card Set', 'Three-Dragon Ante Set'], c.choices.gamingSet ? [c.choices.gamingSet] : [], 1, v => { c.choices.gamingSet = v[0]; changed(); })] : null));
       const fid = featIdOf(bg.feat);
       const feat = D.feat[fid];
-      out.push(acc({ key: 'bg-feat', title: `Origin Feat: ${bg.feat}`, sub: featTh(fid)?.s, need: fid === 'magic-initiate' && !c.choices.miAb, openSet },
+      if (bg.feat && (!bg.custom || fid === 'magic-initiate')) out.push(acc({ key: 'bg-feat', title: `Origin Feat: ${bg.feat}`, sub: featTh(fid)?.s, need: fid === 'magic-initiate' && !c.choices.miAb, openSet },
         fid === 'magic-initiate' ? miAbility() : null,
         feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: ['feats', fid], pack: feat.pack }) : null));
     }
@@ -412,7 +438,7 @@ export function renderWizard(root, c, stepId, nav) {
           id: f.id, iconName: 'feat', title: f.name, sub: packSub(f), desc: featTh(f.id)?.s, selected: so.feat === f.id,
           onClick: () => { so.feat = f.id; changed(); },
         }))),
-        so.feat === 'magic-initiate' && !D.bg[c.bgId]?.feat.startsWith('Magic Initiate') ? [h('p.muted', 'Magic Initiate: เลือกรายการเวท'),
+        so.feat === 'magic-initiate' && !(bgOf(c)?.feat || '').startsWith('Magic Initiate') ? [h('p.muted', 'Magic Initiate: เลือกรายการเวท'),
           chips(['cleric', 'druid', 'wizard'], c.choices.miList ? [c.choices.miList] : [], 1, v => { c.choices.miList = v[0]; c.choices.miCantrips = []; c.choices.miSpell = null; changed(); }, { labels: { cleric: 'Cleric', druid: 'Druid', wizard: 'Wizard' } }), miAbility()] : null,
         so.feat === 'skilled' ? [h('p.muted', 'Skilled: เลือกสกิล 3 อย่าง (กฎจริงเลือกเครื่องมือแทนได้ — ถ้าเลือกเครื่องมือ จดไว้ในโน้ตได้เลย)'),
           counter((c.choices.skilled || []).length, 3), chips(SKILLS.map(s => s[0]), c.choices.skilled || [], 3, v => { c.choices.skilled = v; changed(); })] : null));
@@ -506,7 +532,7 @@ export function renderWizard(root, c, stepId, nav) {
 
   // ---------- 5. ของติดตัว ----------
   function equipment() {
-    const cls = D.cls[c.classId], bg = D.bg[c.bgId];
+    const cls = D.cls[c.classId], bg = bgOf(c);
     const e = c.equipment;
     const out = [intro('EQUIPMENT · ของติดตัว', 'เลือกชุดอุปกรณ์เริ่มต้นจากคลาสและ Background — ส่วนใหญ่ชุดสุดท้ายคือ "รับเป็นเงิน" แล้วไปซื้อของเองทีหลัง')];
     const optBlock = (title, text, key) => {

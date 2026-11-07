@@ -49,10 +49,10 @@ function fillSub(root, classId, name, nav) {
 export function openToggles(after) {
   const docs = P.openDocs(), all = P.openOn();
   return h('div.open-toggles',
-    h('p.muted.small', 'ซับคลาสจากหนังสือ 5e ของสำนักพิมพ์อื่นที่เปิดให้ใช้ฟรีตามสัญญา OGL 1.0a (ไม่ใช่ของ D&D ทางการ) แปลงให้เข้ากับกฎ 2024 แล้ว — ก่อนใช้ควรถาม DM ก่อน · ขึ้นป้าย 📖'),
+    h('p.muted.small', 'ซับคลาส Background และ Feat จากหนังสือ 5e ของสำนักพิมพ์อื่นที่เปิดให้ใช้ฟรีตามสัญญา OGL 1.0a (ไม่ใช่ของ D&D ทางการ) แปลงให้เข้ากับกฎ 2024 แล้ว — ก่อนใช้ควรถาม DM ก่อน · ขึ้นป้าย 📖'),
     h('label.row.check-row', h('input', { type: 'checkbox', checked: all, onchange: e => { P.setOpen(null, e.target.checked); after?.(); } }), h('b', ' ใช้คอนเทนต์เสริม')),
     all ? h('div.pack-toggles', docs.map(d => h('label.row.check-row', h('input', { type: 'checkbox', checked: P.openOn(d.id), onchange: e => { P.setOpen(d.id, e.target.checked); after?.(); } }),
-      ` 📖 ${d.title} `, h('small.muted', `ซับคลาส ${d.n}`)))) : null,
+      ` 📖 ${d.title} `, h('small.muted', d.label)))) : null,
     h('p.muted.small', 'ตัวละครที่เลือกของจากเล่มที่ปิดไว้แล้วยังใช้ได้เหมือนเดิม แค่จะไม่ขึ้นให้เลือกใหม่ · รายชื่อผู้แต่งดูได้ที่ ', h('a', { href: '#/credits' }, 'เครดิต')));
 }
 function openBlock(rerender) {
