@@ -18,13 +18,21 @@ G = lambda src: 'open-spells-' + ('toh' if src == 'toh' else 'dmag' if src.start
 for x in O('spells'): order.setdefault(G(x['src']), []).append(x['id'])
 group = {k: g for g, ks in order.items() for k in ks}
 
+def unlink(t):
+  """ลิงก์ Open5e ([ชื่อ](https://api.open5e.com/spells/x)) → ชื่อตัวเอียง (สเปล) / ข้อความเฉย ๆ (อย่างอื่น)"""
+  def f(m):
+    txt, url = m.group(1), m.group(2)
+    if '/spells/' in url and not txt.startswith('*'): return f'*{txt}*'
+    return txt
+  return re.sub(r'\[([^\]]+)\]\(\s*(https?://[^)\s]*open5e[^)]*|/[^)]*)\)', f, t)
+
 new = {}
 for p in sorted(glob.glob(os.path.join(sys.argv[1], '*.txt'))):
   key, buf = None, []
   for line in open(p, encoding='utf-8').read().split('\n') + ['@@@ END']:
     m = re.match(r'^@@@ (\S+)\s*$', line)
     if m:
-      if key: new[key] = re.sub(r'\n{3,}', '\n\n', '\n'.join(buf).strip())
+      if key: new[key] = unlink(re.sub(r'\n{3,}', '\n\n', '\n'.join(buf).strip()))
       key, buf = (None if m.group(1) == 'END' else m.group(1)), []
     else: buf.append(line)
 bad = [k for k in new if k not in group]
