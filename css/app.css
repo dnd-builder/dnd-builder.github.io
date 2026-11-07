@@ -25,6 +25,9 @@ h3 { font-size: 1.05rem; color: var(--gold2); }
 h4 { font-size: .95rem; color: var(--muted); }
 p { margin: .4em 0 .8em; }
 button { font: inherit; color: inherit; }
+/* กันซูมตอนแตะปุ่มรัว ๆ (double-tap zoom) + iOS ซูมตอนแตะช่องพิมพ์ที่ตัวเล็กกว่า 16px */
+html { touch-action: manipulation; }
+@supports (-webkit-touch-callout: none) { input, select, textarea { font-size: 16px !important; } }
 .muted { color: var(--muted); }
 .small { font-size: .85rem; }
 .ico { width: 1em; height: 1em; display: block; fill: currentColor; }
@@ -518,7 +521,7 @@ select.inp { width: auto; min-width: 90px; }
 .rest-btn { flex: none; display: flex; flex-direction: column; align-items: center; gap: 0; width: 46px; padding: 4px 0; border-radius: 10px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font: inherit; cursor: pointer; }
 .rest-btn span .ico { width: 18px; height: 18px; color: var(--gold2); }
 .rest-btn small { font-size: .62rem; line-height: 1.2; }
-.mini { display: none; width: 100%; gap: 12px; align-items: center; flex-wrap: wrap; padding: 3px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font: inherit; font-size: .8rem; text-align: left; cursor: pointer; }
+.mini { display: none; position: absolute; left: 16px; right: 16px; top: 100%; z-index: 2; box-shadow: 0 6px 12px #0006; gap: 12px; align-items: center; flex-wrap: wrap; padding: 3px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font: inherit; font-size: .8rem; text-align: left; cursor: pointer; }
 .mini.show { display: flex; }
 .mini b { color: var(--text); }
 .mini em { color: var(--blue); font-style: normal; }
@@ -788,3 +791,13 @@ ul.cd-feats { margin: 0; padding-left: 18px; } ul.cd-feats li { margin: 3px 0; }
 .tip-box { background: #1f1a24; border: 1px solid #3b2f45; border-radius: var(--r); padding: 2px 14px; margin: 8px 0; }
 .tip-box p { margin: 8px 0; }
 .lineage-info { margin-top: 8px; }
+
+/* เน้นสแตทสำคัญ: ค่าพลังหลักคลาส/ค่าพลังร่ายเวท, เซฟที่ชำนาญ, สกิลที่ชำนาญ */
+.ab6 { position: relative; }
+.ab6.key { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 16%, var(--card)); box-shadow: 0 0 0 1px var(--gold) inset; }
+.ab6.key small { color: var(--gold2); font-weight: 700; }
+.ab6 .key-tag { position: absolute; top: -7px; right: 4px; font-style: normal; font-size: .58rem; padding: 0 5px; border-radius: 6px; background: var(--gold); color: #fff; line-height: 1.5; }
+.save6.prof { border-color: var(--gold); }
+.save6.prof b, .save6.prof small { color: var(--gold2); }
+.sk-row.prof .skill-bonus, .sk-row.prof b { color: var(--gold2); }
+.sk-row.exp .skill-bonus, .sk-row.exp b { color: var(--gold2); text-shadow: 0 0 6px color-mix(in srgb, var(--gold) 60%, transparent); }

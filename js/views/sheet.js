@@ -201,9 +201,12 @@ export function renderSheet(root, c, tab, nav) {
     const defMain = x.defenses.filter(d => !d.when);
     const nCond = P.conditions.length + (P.exh ? 1 : 0);
     const cm = combat();
+    // ค่าพลังสำคัญ: ค่าพลังหลักของทุกคลาสที่มี + ค่าพลังที่ใช้ร่ายเวท
+    const EN = { strength: 'str', dexterity: 'dex', constitution: 'con', intelligence: 'int', wisdom: 'wis', charisma: 'cha' };
+    const keyAb = new Set([...Object.keys(x.CLs || {}).flatMap(id => (D.cls[id]?.core?.['Primary Ability'] || '').toLowerCase().split(/\s+(?:or|and)\s+|,\s*/).map(w => EN[w.trim()])), ...x.casting.map(b => b.ab)].filter(Boolean));
     return h('div.sh-main' + (cm ? '.combat' : ''),
-      cm ? null : h('div.abil6', ABIL.map(a => h('button.ab6', { onclick: () => abilInfo(a, x) },
-        h('small', ABIL_EN[a].toUpperCase()), h('b', sign(x.m[a])), h('span.oval', String(x.score[a]))))),
+      cm ? null : h('div.abil6', ABIL.map(a => h('button.ab6' + (keyAb.has(a) ? '.key' : ''), { onclick: () => abilInfo(a, x) },
+        h('small', ABIL_EN[a].toUpperCase()), keyAb.has(a) ? h('i.key-tag', 'หลัก') : null, h('b', sign(x.m[a])), h('span.oval', String(x.score[a]))))),
       h('div.box3',
         box('PROFICIENCY', 'โบนัสชำนาญ', sign(x.pb), null, () => explain('Proficiency Bonus', [
           h('div.formula', h('div.f-main', h('span', `เลเวลรวม ${x.L}`), h('b', sign(x.pb))), h('div.f-parts', h('span', 'Lv 1–4 +2 · 5–8 +3 · 9–12 +4 · 13–16 +5 · 17–20 +6'))),
@@ -231,7 +234,7 @@ export function renderSheet(root, c, tab, nav) {
         box('CONDITIONS', 'สถานะ', nCond ? String(nCond) : '—', null, () => condSheet(), nCond ? '.bad' : '')),
       condFx(),
       head('SAVING THROWS', 'การทอยเซฟ', infoBtn('save')),
-      h('div.saves6', x.saves.map(sv => h('button.save6', { onclick: () => explain(`${ABIL_EN[sv.ab]} Saving Throw`, [
+      h('div.saves6', x.saves.map(sv => h('button.save6' + (sv.prof ? '.prof' : ''), { onclick: () => explain(`${ABIL_EN[sv.ab]} Saving Throw`, [
         formula('ทอยเซฟ', sv.bonus, sv.parts, x.rf('save', sv.ab)),
         D.th.help?.abilities?.[sv.ab] ? h('p.th', h('b', `เซฟ ${ABIL_SHORT[sv.ab]} ใช้ตอน: `), D.th.help.abilities[sv.ab].save) : null,
         ...helpBody('save').slice(1),
@@ -256,7 +259,7 @@ export function renderSheet(root, c, tab, nav) {
       cm ? null : head('SKILLS', 'สกิล', infoBtn('pb')),
       cm ? null : h('div.card.list.skills-tb',
         h('div.sk-row.sk-head', h('small', 'PROF'), h('small', 'MOD'), h('small', 'SKILL'), h('small', 'BONUS')),
-        x.skills.map(s => h('button.sk-row', { onclick: () => skillInfo(s, x) },
+        x.skills.map(s => h('button.sk-row' + (s.exp ? '.exp' : s.prof ? '.prof' : ''), { onclick: () => skillInfo(s, x) },
           h('span.dot' + (s.exp ? '.exp' : s.prof ? '.prof' : '')), h('small.sk-ab', ABIL_SHORT[s.ab]),
           h('div', h('b', s.name), h('small', D.th.misc?.skills?.[s.name] || '')), h('span.skill-bonus', sign(s.bonus), fxMark(x.rf('check', s.ab, s.name)))))),
       cm ? h('p.muted.small', '⚔️ โหมดสู้ — ค่าพลัง สกิล และแท็บอื่น ๆ ซ่อนไว้ กด 📄 ที่หัวใบเพื่อกลับใบเต็ม') : h('p.muted.small', '● ชำนาญ (บวก Proficiency) · ◉ Expertise (บวก Proficiency 2 เท่า) · แตะแถวไหนก็ได้เพื่อดูสูตร'));
