@@ -64,6 +64,12 @@ export function renderCredits(root) {
       h('a', { href: 'https://creativecommons.org/licenses/by/4.0/legalcode', target: '_blank', rel: 'noopener' }, 'https://creativecommons.org/licenses/by/4.0/legalcode'), '.'),
     h('p', 'คำอธิบายภาษาไทยในเว็บนี้เป็นการสรุปและแปลความจาก SRD 5.2.1 (มีการดัดแปลง) ส่วนข้อความภาษาอังกฤษแสดงตามต้นฉบับ เว็บนี้เป็นงานแฟนเมด ใช้ได้กับกฎ "fifth edition" (5E compatible) และไม่ได้เกี่ยวข้องหรือได้รับการรับรองจาก Wizards of the Coast'),
     h('p', 'ข้อมูล SRD แปลงเป็นมาร์กดาวน์โดย ', h('a', { href: 'https://github.com/oldmanumby/dnd.srd.5.2', target: '_blank', rel: 'noopener' }, 'oldmanumby/dnd.srd.5.2'), ' (CC-BY-4.0)'),
+    D.open?.docs?._ogl ? [
+      h('h3', 'คอนเทนต์เสริม (Open Game License 1.0a)'),
+      h('p', 'ซับคลาส Background Feat สเปล และเผ่าที่ขึ้นป้าย 📖 มาจากหนังสือต่อไปนี้ ซึ่งเผยแพร่เป็น Open Game Content ภายใต้ Open Game License v1.0a ข้อมูลดึงจาก ',
+        h('a', { href: 'https://github.com/open5e/open5e-api', target: '_blank', rel: 'noopener' }, 'Open5e'), ' แล้วดัดแปลงให้เข้ากับกฎ 2024 และแปลเป็นภาษาไทย (การแปลและดัดแปลงนี้ก็เป็น Open Game Content ด้วย) · ไม่มีการใช้ Product Identity ของผู้จัดพิมพ์'),
+      h('ul', Object.entries(D.open.docs).filter(([k]) => k[0] !== '_').map(([, d]) => h('li', h('b', d.title), d.organization ? ` — ${d.organization}` : '', d.url ? [' · ', h('a', { href: d.url, target: '_blank', rel: 'noopener' }, 'ลิงก์')] : null))),
+      h('details.orig', h('summary', 'Open Game License v1.0a + Section 15 (ต้นฉบับ)'), h('div.md', { html: md(D.open.docs._ogl) }))] : null,
     h('h3', 'ไอคอน'),
     h('p', 'Icons by Lorc, Delapouite and contributors from ', h('a', { href: 'https://game-icons.net', target: '_blank', rel: 'noopener' }, 'game-icons.net'), ', licensed under ',
       h('a', { href: 'https://creativecommons.org/licenses/by/3.0/', target: '_blank', rel: 'noopener' }, 'CC BY 3.0'), '.'),

@@ -50,6 +50,33 @@ export const featIdOf = name => {
   return D.featByName?.[n]?.id || n.replace(/\s+/g, '-');
 };
 
+// ---------- คอนเทนต์เปิด (OGL) ----------
+const META = 'hh.meta.v1';
+const metaGet = () => { try { return JSON.parse(localStorage.getItem(META)) || {}; } catch { return {}; } };
+/** หนังสือที่มีของให้ใช้ → [{id, title, n}] */
+export const openDocs = () => Object.entries((D.open?.subclasses || []).reduce((o, s) => ((o[s.src] = (o[s.src] || 0) + 1), o), {}))
+  .map(([id, n]) => ({ id, n, title: docTitle(id) }));
+export const docTitle = id => D.open?.docs?.[id]?.title || id;
+/** เปิดใช้หนังสือนี้ไหม (ไม่ใส่ = ดูสวิตช์รวม) — ค่าเริ่มต้นเปิดทั้งหมด */
+export const openOn = id => { const m = metaGet(); return m.openAll !== false && (!id || !m.openOff?.includes(id)); };
+export function setOpen(id, on) {
+  const m = metaGet();
+  if (!id) m.openAll = on;
+  else { const off = new Set(m.openOff || []); on ? off.delete(id) : off.add(id); m.openOff = [...off]; if (on) m.openAll = true; }
+  try { localStorage.setItem(META, JSON.stringify(m)); } catch {}
+  applyPacks();
+}
+/** ป้ายแหล่งที่มา: 📖 หนังสือ OGL / 📦 แพ็ก */
+export const srcTag = x => (x?.open ? '📖 ' : '📦 ') + x?.pack;
+function openSub(s) {
+  const pack = docTitle(s.src), th = D.open.th.subclasses?.[s.id] || {};
+  return {
+    ...s, pack, open: s.src, th: { s: th.s || '' },
+    features: s.features.map(f => ({ ...f, pack, open: s.src, subName: s.name,
+      th: { t: th.f?.[f.id]?.t || f.t, s: th.f?.[f.id]?.s || '', tip: th.f?.[f.id]?.tip }, full: ['open-subclasses', [s.id, f.id]] })),
+  };
+}
+
 // ---------- ผสมแพ็กเข้ากับข้อมูล ----------
 let BASE = null;
 export function applyPacks() {
@@ -85,6 +112,10 @@ export function applyPacks() {
       if (s.th?.full) D.thFull.spells[s.id] = s.th.full;
     }
   }
+  // คอนเทนต์เปิด: ทำดัชนีไว้ทุกตัว (ตัวละครที่เลือกไว้ยังเปิดได้แม้ปิดหนังสือ) แต่ให้เลือกได้เฉพาะหนังสือที่เปิด
+  D.openSub ||= Object.fromEntries((D.open?.subclasses || []).map(s => [s.id, openSub(s)]));
+  const openSubs = {};
+  for (const s of Object.values(D.openSub)) if (D.cls[s.classId] && openOn(s.src)) (openSubs[s.classId] ||= []).push(s);
   D.backgrounds = bgs; D.feats = feats; D.spells = spells;
   const idx = arr => Object.fromEntries(arr.map(x => [x.id, x]));
   D.bg = idx(bgs); D.feat = idx(feats); D.spell = idx(spells);
@@ -99,7 +130,7 @@ export function applyPacks() {
       const phb = phbId(name), i = ps.findIndex(x => normName(x.name) === normName(name));
       if (i >= 0) { const x = ps.splice(i, 1)[0]; x.phb = phb; list.push(x); } else list.push(stubSub(k.id, name, phb));
     }
-    D.subs[k.id] = [...list, ...ps];
+    D.subs[k.id] = [...list, ...ps, ...(openSubs[k.id] || [])];
   }
 }
 

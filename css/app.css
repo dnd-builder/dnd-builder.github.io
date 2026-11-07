@@ -776,3 +776,6 @@ ul.cd-feats { margin: 0; padding-left: 18px; } ul.cd-feats li { margin: 3px 0; }
 .row-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip-pair { display: inline-flex; gap: 2px; }
 .chip-pair .chip.ddb { padding-left: 8px; padding-right: 8px; opacity: .8; }
+.prose a { overflow-wrap: anywhere; }
+.open-toggles .check-row small { margin-left: 4px; }
+.open-block summary { cursor: pointer; padding: 8px 0; }

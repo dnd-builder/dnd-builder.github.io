@@ -106,6 +106,7 @@ export function subOf(c, id = c.classId) {
   const list = D.subs?.[cls.id] || [];
   const hit = list.find(s => s.id === sid || s.phb === sid);
   if (hit) return hit;
+  if (D.openSub?.[sid]) return D.openSub[sid];
   // ไม่มีในเครื่อง (แพ็กถูกปิด/ลบ) → เก็บชื่อเดิมไว้เป็นซับคลาสว่าง (ถ้าชื่อตรงรายชื่อ PHB ก็ใช้อันนั้น)
   const base = String(sid).replace(/^phb:/, '').replace(/-[a-z0-9]{4}$/, '');
   const named = list.find(s => s.phb && (s.phb === 'phb:' + base || (o.subName && normName(s.name) === normName(o.subName))));

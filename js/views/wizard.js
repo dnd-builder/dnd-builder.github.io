@@ -7,8 +7,9 @@ import {
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
   SRD_PICKS, compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub, setSub,
 } from '../rules.js';
-import { featIdOf, listPacks, savePack } from '../packs.js';
+import { featIdOf, listPacks, savePack, srcTag, openDocs, openOn, setOpen } from '../packs.js';
 import { levelEditor, levelSummary } from './levelup.js';
+import { openToggles } from './packs.js';
 import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh, stubSubBox, acc, detailGroups, LEVEL_TH } from './parts.js';
 
 const STEPS = [
@@ -27,7 +28,7 @@ const SPECIES_MISS = /Human|Keen Senses|^เลือก (Draconic Ancestry|Elve
 const thc = id => D.th.classes?.[id] || {};
 const ths = id => D.th.species?.[id] || {};
 const featTh = id => D.th.feats?.[id];
-const packSub = (x, base) => (x?.pack ? [base, '📦 ' + x.pack].filter(Boolean).join(' · ') : base);
+const packSub = (x, base) => (x?.pack ? [base, srcTag(x)].filter(Boolean).join(' · ') : base);
 
 export function renderWizard(root, c, stepId, nav) {
   let step = STEPS.findIndex(s => s.id === stepId);
@@ -125,6 +126,8 @@ export function renderWizard(root, c, stepId, nav) {
         packs.length ? h('div.pack-toggles', packs.map(p => h('label.row.check-row', h('input', { type: 'checkbox', checked: p.enabled, onchange: e => { p.enabled = e.target.checked; savePack(p); changed(); } }), ` ${p.name}`)))
           : h('p.muted.small', 'Content Pack คือซับคลาส / Background / Feat / สเปลที่เพิ่มเองหรือได้จากเพื่อน'),
         h('p.muted.small', 'เปิด/ปิดตรงนี้มีผลกับทุกตัวละครในเครื่องนี้ · จัดการแพ็กได้ที่ ', h('a', { href: '#/packs' }, 'หน้าแพ็ก'))),
+      openDocs().length ? acc({ key: 'set-open', title: 'คอนเทนต์เสริมจากหนังสือ (OGL)', sub: openOn() ? `เปิดใช้ ${openDocs().filter(d => openOn(d.id)).length} จาก ${openDocs().length} เล่ม` : 'ปิดอยู่', openSet },
+        openToggles(changed)) : null,
       h('p.muted.small', '💡 ของเริ่มต้นจะเลือกได้ที่ขั้น EQUIPMENT ว่าจะรับเป็นชุดอุปกรณ์หรือรับเป็นเงินแล้วไปซื้อเอง · รูปลักษณ์และนิสัยกรอกได้ที่ขั้น BACKGROUND'),
     ];
   }
@@ -147,7 +150,7 @@ export function renderWizard(root, c, stepId, nav) {
       h('h4', `ซับคลาส: ${cls.subclass.name}`),
       thc(cls.id).sub?.desc ? h('p', thc(cls.id).sub.desc) : null,
       cls.subclass.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true)),
-      (D.subs?.[cls.id] || []).length > 1 ? h('p.muted.small', 'ซับคลาสอื่น: ' + D.subs[cls.id].slice(1).map(x => x.name + (x.stub ? ' (ต้องเติมข้อมูล)' : ' 📦')).join(', ')) : null),
+      (D.subs?.[cls.id] || []).length > 1 ? h('p.muted.small', 'ซับคลาสอื่น: ' + D.subs[cls.id].slice(1).map(x => x.name + (x.stub ? ' (ต้องเติมข้อมูล)' : x.open ? ' 📖' : ' 📦')).join(', ')) : null),
       [{ label: c.classId === cls.id ? 'เลือกอยู่แล้ว' : 'เลือกคลาสนี้', primary: true, onClick: () => pickClass(cls.id) }]);
   }
   function pickClass(id) {
@@ -284,7 +287,7 @@ export function renderWizard(root, c, stepId, nav) {
     const isCur = sb => sub === sb || (!!sub.phb && sub.phb === sb.phb);
     put(`${cls.name} Subclass`, `ซับคลาส: ${sub.name}`, L >= 3 ? 'ได้ตอนเลเวล 3 · แตะการ์ดเพื่อเปลี่ยน' : 'จะได้ตอนเลเวล 3 — เลือกไว้ก่อนได้เลย', false,
       h('div.grid.grid-2', [...subs, ...(subs.some(isCur) ? [] : [sub])].map(sb => choiceCard({
-        id: sb.id, iconName: cls.id, title: sb.name, sub: sb.stub ? '🟡 ต้องเติมข้อมูล' : sb.pack ? '📦 ' + sb.pack : 'SRD',
+        id: sb.id, iconName: cls.id, title: sb.name, sub: sb.stub ? '🟡 ต้องเติมข้อมูล' : sb.pack ? srcTag(sb) : 'SRD',
         desc: sb.stub ? null : sb.pack ? sb.th?.s : thc(cls.id).sub?.desc, selected: isCur(sb),
         onClick: () => { setSub(c, cls.id, sb); changed(); },
       }))),

@@ -1,0 +1,59 @@
+{
+ "toh": {
+  "title": "Tome of Heroes",
+  "author": "Kelly Pawlik, Ben Mcfarland, and Briand Suskind",
+  "organization": "Kobold Press™",
+  "copyright": "Tome of Heroes. Copyright 2022, Open Design; Authors Kelly Pawlik, Ben Mcfarland, and Briand Suskind.",
+  "license": "Open Gaming License",
+  "url": "https://koboldpress.com/kpstore/product/tome-of-heroes-for-5th-edition/"
+ },
+ "o5e": {
+  "title": "Open5e Original Content",
+  "author": "Ean Moody and Open Source Contributors from github.com/open5e-api",
+  "organization": "Open5e",
+  "copyright": "Open5e.com Copyright 2019.",
+  "license": "Open Gaming License",
+  "url": "open5e.com"
+ },
+ "taldorei": {
+  "title": "Critical Role: Tal’Dorei Campaign Setting",
+  "author": "Matthew Mercer with James Haeck",
+  "organization": "Green Ronin Publishing™",
+  "copyright": "Critical Role: Tal’Dorei Campaign Setting is ©2017 Green Ronin Publishing, LLC. All rights reserved.",
+  "license": "Open Gaming License",
+  "url": "https://https://greenronin.com/blog/2017/09/25/ronin-round-table-integrating-wizards-5e-adventures-with-the-taldorei-campaign-setting/"
+ },
+ "kp": {
+  "title": "Kobold Press Compilation",
+  "author": "Various",
+  "organization": "Kobold Press™",
+  "copyright": "© Open Design LLC",
+  "license": "Open Gaming License",
+  "url": "https://koboldpress.com"
+ },
+ "warlock": {
+  "title": "Warlock Archives",
+  "author": "Various",
+  "organization": "Kobold Press™",
+  "copyright": "© Open Design LLC",
+  "license": "Open Gaming License",
+  "url": "https://koboldpress.com/kpstore/product-category/all-products/warlock-5th-edition-dnd/"
+ },
+ "dmag": {
+  "title": "Deep Magic 5e",
+  "author": "Dan Dillon, Chris Harris, and Jeff Lee",
+  "organization": "Kobold Press™",
+  "copyright": "Deep Magic for 5th Edition © 2020 Open Design LLC; Authors: Dan Dillon, Chris Harris, and Jeff Lee.",
+  "license": "Open Gaming License",
+  "url": "https://koboldpress.com/kpstore/product/deep-magic-for-5th-edition-hardcover/"
+ },
+ "dmag-e": {
+  "title": "Deep Magic Extended",
+  "author": "Various",
+  "organization": "Kobold Press™",
+  "copyright": "© Open Design LLC",
+  "license": "Open Gaming License",
+  "url": "https://koboldpress.com"
+ },
+ "_ogl": "OPEN GAME LICENSE Version 1.0a\n\nThe following text is the property of Wizards of the Coast, Inc. and is Copyright 2000 Wizards of the Coast, Inc (\"Wizards\"). All Rights Reserved.\n\n1. Definitions: (a)\"Contributors\" means the copyright and/or trademark owners who have contributed Open Game Content; (b)\"Derivative Material\" means copyrighted material including derivative works and translations (including into other computer languages), potation, modification, correction, addition, extension, upgrade, improvement, compilation, abridgment or other form in which an existing work may be recast, transformed or adapted; (c) \"Distribute\" means to reproduce, license, rent, lease, sell, broadcast, publicly display, transmit or otherwise distribute; (d)\"Open Game Content\" means the game mechanic and includes the methods, procedures, processes and routines to the extent such content does not embody the Product Identity and is an enhancement over the prior art and any additional content clearly identified as Open Game Content by the Contributor, and means any work covered by this License, including translations and derivative works under copyright law, but specifically excludes Product Identity. (e) \"Product Identity\" means product and product line names, logos and identifying marks including trade dress; artifacts; creatures characters; stories, storylines, plots, thematic elements, dialogue, incidents, language, artwork, symbols, designs, depictions, likenesses, formats, poses, concepts, themes and graphic, photographic and other visual or audio representations; names and descriptions of characters, spells, enchantments, personalities, teams, personas, likenesses and special abilities; places, locations, environments, creatures, equipment, magical or supernatural abilities or effects, logos, symbols, or graphic designs; and any other trademark or registered trademark clearly identified as Product identity by the owner of the Product Identity, and which specifically excludes the Open Game Content; (f) \"Trademark\" means the logos, names, mark, sign, motto, designs that are used by a Contributor to identify itself or its products or the associated products contributed to the Open Game License by the Contributor (g) \"Use\", \"Used\" or \"Using\" means to use, Distribute, copy, edit, format, modify, translate and otherwise create Derivative Material of Open Game Content. (h) \"You\" or \"Your\" means the licensee in terms of this agreement.\n\n2. The License: This License applies to any Open Game Content that contains a notice indicating that the Open Game Content may only be Used under and in terms of this License. You must affix such a notice to any Open Game Content that you Use. No terms may be added to or subtracted from this License except as described by the License itself. No other terms or conditions may be applied to any Open Game Content distributed using this License.\n\n3. Offer and Acceptance: By Using the Open Game Content You indicate Your acceptance of the terms of this License.\n\n4. Grant and Consideration: In consideration for agreeing to use this License, the Contributors grant You a perpetual, worldwide, royalty-free, non- exclusive license with the exact terms of this License to Use, the Open Game Content.\n\n5. Representation of Authority to Contribute: If You are contributing original material as Open Game Content, You represent that Your Contributions are Your original creation and/or You have sufficient rights to grant the rights conveyed by this License.\n\n6. Notice of License Copyright: You must update the COPYRIGHT NOTICE portion of this License to include the exact text of the COPYRIGHT NOTICE of any Open Game Content You are copying, modifying or distributing, and You must add the title, the copyright date, and the copyright holder's name to the COPYRIGHT NOTICE of any original Open Game Content you Distribute.\n\n7. Use of Product Identity: You agree not to Use any Product Identity, including as an indication as to compatibility, except as expressly licensed in another, independent Agreement with the owner of each element of that Product Identity. You agree not to indicate compatibility or co-adaptability with any Trademark or Registered Trademark in conjunction with a work containing Open Game Content except as expressly licensed in another, independent Agreement with the owner of such Trademark or Registered Trademark. The use of any Product Identity in Open Game Content does not constitute a challenge to the ownership of that Product Identity. The owner of any Product Identity used in Open Game Content shall retain all rights, title and interest in and to that Product Identity.\n\n8. Identification: If you distribute Open Game Content You must clearly indicate which portions of the work that you are distributing are Open Game Content.\n\n9. Updating the License: Wizards or its designated Agents may publish updated versions of this License. You may use any authorized version of this License to copy, modify and distribute any Open Game Content originally distributed under any version of this License.\n\n10. Copy of this License: You MUST include a copy of this License with every copy of the Open Game Content You Distribute.\n\n11. Use of Contributor Credits: You may not market or advertise the Open Game Content using the name of any Contributor unless You have written permission from the Contributor to do so.\n\n12. Inability to Comply: If it is impossible for You to comply with any of the terms of this License with respect to some or all of the Open Game Content due to statute, judicial order, or governmental regulation then You may not Use any Open Game Material so affected.\n\n13. Termination: This License will terminate automatically if You fail to comply with all terms herein and fail to cure such breach within 30 days of becoming aware of the breach. All sublicenses shall survive the termination of this License.\n\n14. Reformation: If any provision of this License is held to be unenforceable, such provision shall be reformed only to the extent necessary to make it enforceable.\n\n15. COPYRIGHT NOTICE\n\nOpen Game License v 1.0a Copyright 2000, Wizards of the Coast, Inc.\n\nSystem Reference Document 5.1 Copyright 2016, Wizards of the Coast, Inc.; Authors Mike Mearls, Jeremy Crawford, Chris Perkins, Rodney Thompson, Peter Lee, James Wyatt, Robert J. Schwalb, Bruce R. Cordell, Chris Sims, and Steve Townshend, based on original material by E. Gary Gygax and Dave Arneson.\n\nTome of Heroes. Copyright 2022, Open Design; Authors Kelly Pawlik, Ben Mcfarland, and Briand Suskind.\n\nOpen5e.com Copyright 2019.\n\nCritical Role: Tal’Dorei Campaign Setting is ©2017 Green Ronin Publishing, LLC. All rights reserved.\n\n© Open Design LLC\n\nDeep Magic for 5th Edition © 2020 Open Design LLC; Authors: Dan Dillon, Chris Harris, and Jeff Lee.\n\nEND OF LICENSE"
+}

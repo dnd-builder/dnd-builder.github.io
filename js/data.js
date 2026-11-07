@@ -7,12 +7,15 @@ const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', '
 const get = p => fetch(p).then(r => { if (!r.ok) throw new Error(p); return r.json(); });
 
 export async function loadData() {
-  const [srd, th, icons, subList] = await Promise.all([
+  const [srd, th, icons, subList, open] = await Promise.all([
     Promise.all(SRD.map(k => get(`data/srd/${k}.json`))),
     Promise.all(TH.map(k => get(`data/th/${k}.json`).catch(() => ({})))),
     get('data/icons.json'),
     get('data/subclass-list.json').catch(() => ({})),
+    Promise.all([get('data/open/docs.json'), get('data/open/subclasses.json'), get('data/th/open/subclasses.json').catch(() => ({}))]).catch(() => null),
   ]);
+  // คอนเทนต์เปิด (OGL 1.0a จาก Open5e) → ผสมใน applyPacks()
+  D.open = open ? { docs: open[0], subclasses: open[1], th: { subclasses: open[2] } } : { docs: {}, subclasses: [], th: {} };
   D.subList = subList;   // ชื่อซับคลาส PHB 2024 ครบ 48 (ชื่ออย่างเดียว) → {classId: [ชื่อ]}
   SRD.forEach((k, i) => (D[k] = srd[i]));
   D.th = {};

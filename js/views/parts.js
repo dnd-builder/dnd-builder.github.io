@@ -2,7 +2,7 @@
 import { D, thFeature, loadFull } from '../data.js';
 import { h, icon, iconSvg, sheet, sign } from '../util.js';
 import { md } from '../md.js';
-import { fillHref, ddbHref } from '../packs.js';
+import { fillHref, ddbHref, srcTag } from '../packs.js';
 
 export const TYPE_LABEL = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', passive: 'ติดตัว', magic: 'Magic Action' };
 export const SCHOOL_TH = { Abjuration: 'ป้องกัน', Conjuration: 'เรียก/เสก', Divination: 'พยากรณ์', Enchantment: 'สะกดจิต', Evocation: 'พลังงาน', Illusion: 'ภาพลวง', Necromancy: 'ความตาย', Transmutation: 'แปรสภาพ' };
@@ -32,18 +32,19 @@ export function fullTh(g, id) {
 }
 
 /** การ์ดฟีเจอร์ — th = {t, s, tip, full?}, full = [กลุ่ม, id] สำหรับคำแปลเต็ม, pack = ชื่อ Content Pack (ถ้ามาจากแพ็ก) */
-export function featureCard({ name, level, text, th, tag, full, pack }) {
+export function featureCard({ name, level, text, th, tag, full, pack, open }) {
   const t = th?.t || 'passive';
   if (pack) return h('article.feat.from-pack.t-' + t,
     h('header',
       h('span.feat-ico', { html: iconSvg(t === 'magic' ? 'action' : t) }),
       h('div.feat-title', h('b', name), h('small', [level ? `Lv ${level}` : null, tag, TYPE_LABEL[t]].filter(Boolean).join(' · ')))),
-    h('span.pack-badge', '📦 ' + pack),
+    h('span.pack-badge', srcTag({ pack, open })),
     th?.s ? h('p.th', th.s) : null,
     th?.full ? h('div.md', { html: md(th.full) }) : null,
     !th?.s && !th?.full && !text ? h('p.th.muted', 'แพ็กนี้ยังไม่ได้ใส่คำอธิบาย') : null,
     th?.tip ? h('p.tip', '💡 ' + th.tip) : null,
-    th?.s || th?.full ? original(text, 'ข้อความ EN') : (text ? h('div.md', { html: md(text) }) : null));
+    full && th?.s ? fullTh(...full) : null,
+    th?.s || th?.full ? original(text, open ? `ต้นฉบับ (EN) — ${pack} (OGL)` : 'ข้อความ EN') : (text ? h('div.md', { html: md(text) }) : null));
   return h('article.feat.t-' + t,
     h('header',
       h('span.feat-ico', { html: iconSvg(t === 'magic' ? 'action' : t) }),
@@ -56,7 +57,9 @@ export function featureCard({ name, level, text, th, tag, full, pack }) {
 
 export function classFeatureCard(cls, f, sub) {
   if (f.pack) {
-    const card = featureCard({ name: f.name, level: f.level, text: f.text, th: f.th, tag: f.subName, pack: f.pack });
+    const card = featureCard({ name: f.name, level: f.level, text: f.text, th: f.th, tag: f.subName, pack: f.pack, open: f.open, full: f.full });
+    if (f.note) card.append(h('p.tip', '⚖️ ' + f.note));
+    if (f.orig && f.orig !== f.level) card.append(h('p.muted.small', `ต้นฉบับ (กฎ 2014) ได้ที่เลเวล ${f.orig} — ย้ายมาช่องซับคลาสของกฎ 2024 ที่เลเวล ${f.level}`));
     if (f.opts?.length) card.append(h('ul.pack-opts', f.opts.map(o => h('li' + (o.name === f.picked ? '.on' : ''), h('b', (o.name === f.picked ? '✅ ' : '') + o.name), o.s ? ' — ' + o.s : ''))),
       f.picked ? null : h('p.tip', '🟡 ยังไม่ได้เลือก — ไปเลือกที่ขั้น Class ในหน้าแก้ไข'));
     return card;
@@ -71,7 +74,7 @@ export function spellMeta(s) {
 export function spellDetail(s, actions = [], extra = null) {
   sheet(s.name, h('div.spell-detail',
     h('div.spell-head', h('span.school', { html: iconSvg(s.school) }), h('div', h('b', `${LEVEL_TH(s.level)} · ${s.school}`), h('small', `สำนัก${SCHOOL_TH[s.school] || ''}`))),
-    s.pack ? h('span.pack-badge', '📦 ' + s.pack) : null,
+    s.pack ? h('span.pack-badge', srcTag(s)) : null,
     D.th.spells?.[s.id] ? h('p.th', D.th.spells[s.id]) : null,
     extra ? h('div.spell-math', extra) : null,
     s.pack ? (D.thFull?.spells?.[s.id] ? h('div.md', { html: md(D.thFull.spells[s.id]) }) : null) : fullTh('spells', s.id),

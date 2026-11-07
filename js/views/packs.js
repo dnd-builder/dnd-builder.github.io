@@ -45,6 +45,25 @@ function fillSub(root, classId, name, nav) {
     h('button.btn.primary', { onclick: () => go(fresh(), false) }, '+ สร้างแพ็กใหม่')));
 }
 
+/** สวิตช์คอนเทนต์เสริมจากหนังสือ OGL (ใช้ทั้งหน้าแพ็กและขั้น START) */
+export function openToggles(after) {
+  const docs = P.openDocs(), all = P.openOn();
+  return h('div.open-toggles',
+    h('p.muted.small', 'ซับคลาสจากหนังสือ 5e ของสำนักพิมพ์อื่นที่เปิดให้ใช้ฟรีตามสัญญา OGL 1.0a (ไม่ใช่ของ D&D ทางการ) แปลงให้เข้ากับกฎ 2024 แล้ว — ก่อนใช้ควรถาม DM ก่อน · ขึ้นป้าย 📖'),
+    h('label.row.check-row', h('input', { type: 'checkbox', checked: all, onchange: e => { P.setOpen(null, e.target.checked); after?.(); } }), h('b', ' ใช้คอนเทนต์เสริม')),
+    all ? h('div.pack-toggles', docs.map(d => h('label.row.check-row', h('input', { type: 'checkbox', checked: P.openOn(d.id), onchange: e => { P.setOpen(d.id, e.target.checked); after?.(); } }),
+      ` 📖 ${d.title} `, h('small.muted', `ซับคลาส ${d.n}`)))) : null,
+    h('p.muted.small', 'ตัวละครที่เลือกของจากเล่มที่ปิดไว้แล้วยังใช้ได้เหมือนเดิม แค่จะไม่ขึ้นให้เลือกใหม่ · รายชื่อผู้แต่งดูได้ที่ ', h('a', { href: '#/credits' }, 'เครดิต')));
+}
+function openBlock(rerender) {
+  if (!P.openDocs().length) return null;
+  const wrap = h('details.block.open-block', h('summary', h('b', '📖 คอนเทนต์เสริม (OGL) '), P.openOn() ? `เปิดใช้ ${P.openDocs().filter(d => P.openOn(d.id)).length} เล่ม` : 'ปิดอยู่'));
+  const body = h('div');
+  const draw = () => body.replaceChildren(openToggles(() => { draw(); wrap.querySelector('summary').lastChild.textContent = P.openOn() ? `เปิดใช้ ${P.openDocs().filter(d => P.openOn(d.id)).length} เล่ม` : 'ปิดอยู่'; }));
+  draw(); wrap.append(body);
+  return wrap;
+}
+
 /** ซับคลาส PHB 2024 ที่ยังไม่มีข้อมูล */
 function missingList() {
   const rows = D.classes.map(k => [k, P.missingSubs(k.id)]).filter(([, l]) => l.length);
@@ -89,7 +108,7 @@ function listView(root, nav) {
         h('small', [p.author ? `โดย ${p.author}` : null, P.TYPES.map(t => p.items?.[t]?.length ? `${P.TYPE_LABEL[t]} ${p.items[t].length}` : null).filter(Boolean).join(' · ') || 'ยังว่างอยู่'].filter(Boolean).join(' — '))),
       toggle(p.enabled, v => { p.enabled = v; P.savePack(p); listView(root, nav); }))))
       : h('div.empty', h('p', 'ยังไม่มีแพ็กในเครื่องนี้'), h('p.muted.small', 'กด "สร้างแพ็กใหม่" หรือขอไฟล์แพ็กจากเพื่อนมานำเข้า')),
-    missingList()));
+    missingList(), openBlock()));
 }
 
 function toggle(on, onChange, label = 'เปิดใช้') {
