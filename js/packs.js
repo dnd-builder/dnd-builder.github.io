@@ -111,6 +111,8 @@ export const stubSub = (classId, name, id = null) => ({ id: id || phbId(name), c
 /** ชื่อซับคลาส PHB ที่ยังไม่มีข้อมูล (ไม่มีแพ็กที่เปิดใช้ชื่อตรงกัน) */
 export const missingSubs = classId => (D.subs?.[classId] || []).filter(s => s.stub && s.phb);
 /** ลิงก์ไปสร้าง/แก้ซับคลาสชื่อนี้ในแพ็ก */
+/** ค้นชื่อนี้ที่ D&D Beyond (ไว้อ่านข้อมูลจากหนังสือที่ซื้อไว้) */
+export const ddbHref = name => `https://www.dndbeyond.com/search?q=${encodeURIComponent(name)}`;
 export const fillHref = (classId, name) => `#/packs/fill/${classId}/${encodeURIComponent(name)}`;
 
 export function bgEquipText(b) {

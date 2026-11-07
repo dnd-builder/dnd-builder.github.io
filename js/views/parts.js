@@ -2,7 +2,7 @@
 import { D, thFeature, loadFull } from '../data.js';
 import { h, icon, iconSvg, sheet, sign } from '../util.js';
 import { md } from '../md.js';
-import { fillHref } from '../packs.js';
+import { fillHref, ddbHref } from '../packs.js';
 
 export const TYPE_LABEL = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', passive: 'ติดตัว', magic: 'Magic Action' };
 export const SCHOOL_TH = { Abjuration: 'ป้องกัน', Conjuration: 'เรียก/เสก', Divination: 'พยากรณ์', Enchantment: 'สะกดจิต', Evocation: 'พลังงาน', Illusion: 'ภาพลวง', Necromancy: 'ความตาย', Transmutation: 'แปรสภาพ' };
@@ -136,7 +136,8 @@ export function stubSubBox(sub, classId) {
     h('p', h('b', `🟡 ${sub.name} ยังไม่มีข้อมูลฟีเจอร์`)),
     h('p.small', 'เติมเองใน Content Pack หรือขอไฟล์แพ็กจากเพื่อนมานำเข้า — พอมีข้อมูลชื่อตรงกันแล้ว ตัวละครจะได้ฟีเจอร์เองโดยไม่ต้องเลือกใหม่'
       + (/^(fighter|rogue)$/.test(classId) ? ' (ถ้าเป็นสายร่ายเวท อย่าลืมกรอกช่อง "การร่ายเวท" ในฟอร์ม)' : '')),
-    h('a.btn.small', { href: fillHref(classId, sub.name) }, '+ สร้างในแพ็ก'));
+    h('div.row-btns', h('a.btn.small', { href: fillHref(classId, sub.name) }, '+ สร้างในแพ็ก'),
+      h('a.btn.small.ghost', { href: ddbHref(sub.name), target: '_blank', rel: 'noopener' }, 'อ่านที่ D&D Beyond ↗')));
 }
 
 /** แถบพับ (accordion) — need = ยังเลือกไม่ครบ (ติด ⚠ + เปิดค้าง), openSet = Set จำว่าแถบไหนเปิดอยู่ */

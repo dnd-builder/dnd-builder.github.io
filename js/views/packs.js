@@ -53,8 +53,9 @@ function missingList() {
   if (!total) return null;
   return h('details.block.miss-subs',
     h('summary', h('b', 'ซับคลาส PHB 2024 '), miss ? `ยังต้องเติม ${miss} จาก ${total}` : `เติมครบ ${total} แล้ว 🎉`),
-    h('p.muted.small', 'ซับคลาสพวกนี้ไม่อยู่ในข้อมูลฟรี (SRD) — กดชื่อเพื่อสร้างในแพ็ก แล้วกรอกข้อมูลจากหนังสือ'),
-    rows.map(([k, l]) => h('div.miss-row', h('b', k.name), h('div.chips', l.map(s => h('a.chip', { href: P.fillHref(k.id, s.name) }, s.name))))));
+    h('p.muted.small', 'ซับคลาสพวกนี้ไม่อยู่ในข้อมูลฟรี (SRD) — กดชื่อเพื่อสร้างในแพ็ก แล้วกรอกข้อมูลจากหนังสือ · กด ↗ เพื่อเปิดอ่านที่ D&D Beyond'),
+    rows.map(([k, l]) => h('div.miss-row', h('b', k.name), h('div.chips', l.map(s => h('span.chip-pair', h('a.chip', { href: P.fillHref(k.id, s.name) }, s.name),
+      h('a.chip.ddb', { href: P.ddbHref(s.name), target: '_blank', rel: 'noopener', title: 'อ่านที่ D&D Beyond' }, '↗')))))));
 }
 
 // ---------- รายการแพ็ก ----------
