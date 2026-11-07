@@ -4,7 +4,7 @@ export const D = {};
 const SRD = ['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal', 'glossary', 'weights'];
 const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc', 'glossary', 'help'];
 
-const OPEN = ['subclasses', 'backgrounds', 'feats', 'species'];   // คอนเทนต์เปิด (OGL) data/open/<กลุ่ม>.json
+const OPEN = ['subclasses', 'backgrounds', 'feats', 'species', 'spells'];   // คอนเทนต์เปิด (OGL) data/open/<กลุ่ม>.json
 const get = p => fetch(p).then(r => { if (!r.ok) throw new Error(p); return r.json(); });
 
 export async function loadData() {

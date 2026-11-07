@@ -227,6 +227,34 @@ def species():
             out.append(x)
     return out
 
+CLS = {'wizard', 'sorcerer', 'warlock', 'cleric', 'bard', 'druid', 'paladin', 'ranger'}
+def spells(docs):
+    """สเปล Open5e → โครงเดียวกับ data/srd/spells.json (ชื่อซ้ำ SRD ข้ามไป — ใช้ของ SRD)"""
+    srd = {x['name'].lower() for x in json.load(open(os.path.join(os.path.dirname(OUT), 'srd', 'spells.json')))}
+    out, seen = [], set()
+    for doc in docs:
+        for e in load(doc, 'Spell'):
+            f = e['fields']; name = f['name'].strip(); low = name.lower()
+            if low in srd or low in seen: continue
+            seen.add(low)
+            conc, rit = str(f.get('requires_concentration')) == 'True', str(f.get('can_be_cast_as_ritual')) == 'True'
+            t = (f.get('casting_time') or '').strip().rstrip('.')
+            t = re.sub(r'^1 action$', 'Action', t); t = re.sub(r'^1 bonus action$', 'Bonus Action', t); t = re.sub(r'^1 reaction', 'Reaction', t)
+            if rit and not t.endswith('Ritual'): t += ' or Ritual'
+            dur = re.sub(r'^Up to ', '', (f.get('duration') or '').strip(), flags=re.I)
+            dur = re.sub(r'\b(Minute|Hour|Round|Day)s?\b', lambda m: m.group(0).lower(), dur)
+            if conc and not dur.lower().startswith('concentration'): dur = 'Concentration, up to ' + dur
+            comp = ', '.join(x for x, k in (('V', 'requires_verbal_components'), ('S', 'requires_somatic_components'), ('M', 'requires_material_components')) if str(f.get(k)) == 'True')
+            if 'M' in comp and f.get('material'): comp += f' ({clean(f["material"]).rstrip(".")})'
+            classes = sorted({ {'sorceror': 'sorcerer'}.get(c.strip().lower(), c.strip().lower()) for c in (f.get('dnd_class') or '').split(',')} & CLS)
+            text = clean(f.get('desc') or '')
+            if (f.get('higher_level') or '').strip(): text += '\n\n**Using a Higher-Level Spell.** ' + clean(f['higher_level'])
+            lv = int(f.get('spell_level') or 0)
+            out.append({'id': f'open:{doc}:{slug(name)}', 'src': doc, 'name': name, 'level': lv, 'school': (f.get('school') or '').strip().title(),
+                        'classes': classes, 'time': t, 'range': (f.get('range') or '').strip(), 'components': comp, 'duration': dur,
+                        'concentration': conc, 'ritual': rit, 'text': text})
+    return out
+
 def docs():
     out = {}
     for d in DOCS + SPELL_DOCS:
@@ -247,6 +275,6 @@ if __name__ == '__main__':
     subs = subclasses()
     json.dump(subs, open(os.path.join(OUT, 'subclasses.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     json.dump(docs(), open(os.path.join(OUT, 'docs.json'), 'w'), ensure_ascii=False, indent=1)
-    for k, fn in (('backgrounds', backgrounds), ('feats', feats), ('species', species)):
+    for k, fn in (('backgrounds', backgrounds), ('feats', feats), ('species', species), ('spells', lambda: spells(['toh', 'o5e', 'kp', 'warlock']))):
         v = fn(); json.dump(v, open(os.path.join(OUT, k + '.json'), 'w'), ensure_ascii=False, separators=(',', ':')); print(k, len(v))
     print('subclasses', len(subs), 'features', sum(len(s['features']) for s in subs))

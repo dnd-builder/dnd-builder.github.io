@@ -54,7 +54,7 @@ export const featIdOf = name => {
 const META = 'hh.meta.v1';
 const metaGet = () => { try { return JSON.parse(localStorage.getItem(META)) || {}; } catch { return {}; } };
 /** หนังสือที่มีของให้ใช้ → [{id, title, n}] */
-export const OPEN_GROUPS = [['subclasses', 'ซับคลาส'], ['backgrounds', 'Background'], ['feats', 'Feat'], ['species', 'เผ่า']];
+export const OPEN_GROUPS = [['subclasses', 'ซับคลาส'], ['backgrounds', 'Background'], ['feats', 'Feat'], ['species', 'เผ่า'], ['spells', 'สเปล']];
 export function openDocs() {
   const o = {};
   for (const [g] of OPEN_GROUPS) for (const x of D.open?.[g] || []) ((o[x.src] ||= {})[g] = (o[x.src][g] || 0) + 1);
@@ -134,11 +134,14 @@ export function applyPacks() {
     D.th.species[x.id] = { tag: t.tag || '', desc: t.s || '', f: t.f || {}, ln: t.ln || {} };
     if (openOn(x.src)) species.push(x);
   }
+  // สเปลจากหนังสือ OGL (ชื่อซ้ำ SRD ถูกตัดตั้งแต่ตัวแปลง)
+  const openSpell = (D.open?.spells || []).map(x => ({ ...x, pack: docTitle(x.src), open: x.src }));
+  for (const x of openSpell) { const t = D.open.th.spells?.[x.id]; if (t) D.th.spells[x.id] = t; if (openOn(x.src)) spells.push(x); }
   D.species = species; D.sp = { ...Object.fromEntries(openSp.map(x => [x.id, x])), ...Object.fromEntries(species.map(x => [x.id, x])) };
   D.backgrounds = bgs; D.feats = feats; D.spells = spells;
   const idx = arr => Object.fromEntries(arr.map(x => [x.id, x]));
-  D.bg = { ...idx(openBg), ...idx(bgs) }; D.feat = { ...idx(openFeat), ...idx(feats) }; D.spell = idx(spells);   // ของ OGL ที่ปิดเล่มยังหาเจอ (ตัวละครเดิมเปิดได้)
-  D.spellByName = Object.fromEntries(spells.map(s => [s.name.toLowerCase(), s]));
+  D.bg = { ...idx(openBg), ...idx(bgs) }; D.feat = { ...idx(openFeat), ...idx(feats) }; D.spell = { ...idx(openSpell), ...idx(spells) };   // ของ OGL ที่ปิดเล่มยังหาเจอ (ตัวละครเดิมเปิดได้)
+  D.spellByName = { ...Object.fromEntries(openSpell.map(s => [s.name.toLowerCase(), s])), ...Object.fromEntries(spells.map(s => [s.name.toLowerCase(), s])) };
   D.featByName = Object.fromEntries(feats.map(f => [f.name.toLowerCase(), f]));
   // ซับคลาส: [SRD, ...รายชื่อ PHB 2024 (ใช้ข้อมูลแพ็กที่ชื่อตรงกัน ไม่งั้นเป็นซับคลาสว่าง), ...ซับคลาสแพ็กอื่น ๆ]
   D.subs = {};
