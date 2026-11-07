@@ -1,9 +1,9 @@
 // แคชไฟล์ไว้ให้เปิดเว็บได้แม้เน็ตหลุดตอนเล่น
-const V = 'hh-v35';
+const V = 'hh-v36';
 const CORE = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'assets/icon.svg',
   'js/main.js', 'js/util.js', 'js/md.js', 'js/data.js', 'js/rules.js', 'js/fx.js', 'js/store.js',
   'js/views/parts.js', 'js/views/glossary.js', 'js/views/packs.js', 'js/packs.js', 'js/views/wizard.js', 'js/views/sheet.js', 'js/views/card.js', 'js/views/turn.js', 'js/views/home.js', 'js/views/levelup.js', 'js/views/explain.js', 'js/views/help.js',
-  'data/icons.json', 'data/subclass-list.json', 'data/open/docs.json', 'data/open/subclasses.json', 'data/srd/animals.json',
+  'data/icons.json', 'data/subclass-list.json', 'data/open/docs.json', 'data/open/subclasses.json', 'data/th/open/subclasses.json', 'data/srd/animals.json',
   ...['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal', 'glossary', 'weights'].map(k => `data/srd/${k}.json`),
   ...['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc', 'glossary', 'help'].map(k => `data/th/${k}.json`),
   ...['options', 'feats', 'mastery', 'classes', 'species', 'spells', 'glossary'].map(k => `data/th/full/${k}.json`)];
