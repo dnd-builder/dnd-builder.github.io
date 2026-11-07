@@ -6,7 +6,7 @@ import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, SKILLS } from '../rules.js';
 import { acc } from './parts.js';
 
-const GO = { actions: 'actions', spells: 'spells', top: '', hp: '', rest: '' };
+const GO = { actions: 'actions', spells: 'spells', top: 'main', hp: '', rest: '' };
 
 export function renderHelp(root, cid, anchor) {
   const H = D.th.help || {};

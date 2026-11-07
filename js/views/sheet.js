@@ -14,14 +14,14 @@ import { showTerm } from './glossary.js';
 import * as T from './turn.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
-const TABS = [['actions', 'ACTIONS', 'การกระทำ'], ['spells', 'SPELLS', 'เวท'], ['inventory', 'INVENTORY', 'ของในกระเป๋า'], ['features', 'FEATURES & TRAITS', 'ความสามารถ'], ['background', 'BACKGROUND', 'ภูมิหลัง'], ['notes', 'NOTES', 'โน้ต'], ['extras', 'EXTRAS', 'สัตว์คู่ใจ']];
-const OLD_TAB = { main: 'actions', skills: 'actions', gear: 'inventory' };
+const TABS = [['main', 'MAIN', 'ข้อมูลหลัก'], ['actions', 'ACTIONS', 'การกระทำ'], ['spells', 'SPELLS', 'เวท'], ['inventory', 'INVENTORY', 'ของในกระเป๋า'], ['features', 'FEATURES & TRAITS', 'ความสามารถ'], ['background', 'BACKGROUND', 'ภูมิหลัง'], ['notes', 'NOTES', 'โน้ต'], ['extras', 'EXTRAS', 'สัตว์คู่ใจ']];
+const OLD_TAB = { skills: 'main', gear: 'inventory' };
 const head = (en, th, ...rest) => h('h3.sec2', h('span', en), h('small', th), ...rest);
 let obs; // IntersectionObserver ของกล่อง HP (โชว์แถบย่อตอนเลื่อนพ้น)
 
 export function renderSheet(root, c, tab, nav) {
   tab = OLD_TAB[tab] || tab;
-  let cur = TABS.some(t => t[0] === tab) ? tab : 'actions';
+  let cur = TABS.some(t => t[0] === tab) ? tab : 'main';
   const P = c.play = Object.assign({ hp: null, temp: 0, hdUsed: 0, slots: {}, res: {}, conditions: [], death: { s: 0, f: 0 }, inspiration: false }, c.play);
   if (!P.hdu) { P.hdu = {}; const d0 = D.cls[c.classId]?.hitDie; if (P.hdUsed && d0) P.hdu[d0] = P.hdUsed; }
   const Dt = c.details = Object.assign({}, c.details);
@@ -45,11 +45,11 @@ export function renderSheet(root, c, tab, nav) {
     if (P.hp == null || P.hp > x.hpMax) P.hp = x.hpMax;
     const y = window.scrollY;
     const miss = missing(c);
-    if (!tabsNow().some(t => t[0] === cur)) cur = 'actions';
+    if (!tabsNow().some(t => t[0] === cur)) cur = 'main';
     const tabsEl = h('nav.tabs', { role: 'tablist' }, tabsNow().map(([id, en, th]) => h('button.tab' + (cur === id ? '.on' : ''), {
       role: 'tab', 'aria-selected': cur === id ? 'true' : 'false', onclick: () => go(id),
     }, h('b', en), h('small', th))));
-    const body = h('section.sh-body', ({ actions, spells, inventory, features, background, notes, extras })[cur](x));
+    const body = h('section.sh-body', ({ main, actions, spells, inventory, features, background, notes, extras })[cur](x));
     swipe(body);
     root.replaceChildren(...[
       header(x),
@@ -94,7 +94,7 @@ export function renderSheet(root, c, tab, nav) {
   // ---------- หัว ----------
   // โหมดสู้ (เฟส 5): เหลือแต่ของที่ใช้ตอนต่อสู้ — จำแยกตามตัวละครใน c.settings.view
   const combat = () => c.settings?.view === 'combat';
-  const tabsNow = () => (combat() ? TABS.filter(([id]) => id === 'actions' || (id === 'spells' && curX?.casting.length) || (id === 'extras' && (c.extras?.length || curX?.CLs.druid >= 2))) : TABS);
+  const tabsNow = () => (combat() ? TABS.filter(([id]) => id === 'main' || id === 'actions' || (id === 'spells' && curX?.casting.length) || (id === 'extras' && (c.extras?.length || curX?.CLs.druid >= 2))) : TABS);
   function toggleView() {
     c.settings = { ...(c.settings || {}), view: combat() ? null : 'combat' };
     save(); redraw(); window.scrollTo(0, 0);
@@ -180,14 +180,28 @@ export function renderSheet(root, c, tab, nav) {
   // ---------- ส่วนบน: สแตททั้งหมด ----------
   const box = (en, th, val, unit, onclick, cls = '') => h('button.box' + cls, { onclick }, h('small.en', en), h('b', val, unit ? h('span.unit', unit) : null), th ? h('small.th', th) : null);
 
+  // เหนือแท็บ: กล่อง HP + Death Saves + สถานะที่ติด + ป้ายร่างสัตว์/สมาธิ (ต้องเห็นทุกแท็บ)
   function top(x) {
+    const nCond = P.conditions.length + (P.exh ? 1 : 0);
+    return h('section.sh-top',
+      hpBox(x),
+      P.hp === 0 ? deathBox() : null,
+      nCond ? h('p.cond-line', '⚠ ติดอยู่: ', [...P.conditions.map(k => h('button.link', { onclick: () => showTerm(k.toLowerCase()) }, k)),
+        P.exh ? h('button.link', { onclick: () => condSheet() }, `Exhaustion ${P.exh}`) : null].filter(Boolean).flatMap((b, i) => (i ? [', ', b] : [b]))) : null,
+      wildBanner(x),
+      P.conc ? h('div.conc-chip', h('span', '🧠 Concentration: ', h('b', D.spell[P.conc]?.name || P.conc)),
+        h('button.link', { onclick: () => explain('Concentration', helpBody('conc')) }, 'คืออะไร'),
+        h('button.btn.small', { onclick: () => { dropConc('เลิกเอง'); done(); } }, 'เลิกใช้สมาธิ')) : null);
+  }
+  // แท็บ MAIN: ค่าพลัง PB/Speed Init/AC เซฟ ประสาทสัมผัส ความชำนาญ สกิล
+  function main(x) {
     const sk = n => 10 + (x.skills.find(s => s.name === n)?.bonus || 0) + passAdj(x, n);
     const spdTxt = [['climb', 'ปีน'], ['swim', 'ว่าย'], ['fly', 'บิน']].filter(([k]) => x.speeds[k]).map(([k, l]) => `${l} ${x.speeds[k]}`).join(' · ');
     const DEF_TH = { res: 'Resistance (โดนครึ่งเดียว)', imm: 'Immunity (ไม่โดนเลย)', vul: 'Vulnerability (โดน 2 เท่า)' };
     const defMain = x.defenses.filter(d => !d.when);
     const nCond = P.conditions.length + (P.exh ? 1 : 0);
     const cm = combat();
-    return h('section.sh-top' + (cm ? '.combat' : ''),
+    return h('div.sh-main' + (cm ? '.combat' : ''),
       cm ? null : h('div.abil6', ABIL.map(a => h('button.ab6', { onclick: () => abilInfo(a, x) },
         h('small', ABIL_EN[a].toUpperCase()), h('b', sign(x.m[a])), h('span.oval', String(x.score[a]))))),
       h('div.box3',
@@ -202,8 +216,6 @@ export function renderSheet(root, c, tab, nav) {
         box('HEROIC', 'Inspiration', P.inspiration ? '✨' : '—', null, () => explain('Heroic Inspiration', [
           h('p.formula', P.inspiration ? '✨ ตอนนี้มีอยู่ 1 ครั้ง' : 'ตอนนี้ยังไม่มี'), ...helpBody('insp')], [
           { label: P.inspiration ? 'ใช้ไปแล้ว (เอาออก)' : 'ได้รับ Heroic Inspiration', primary: true, onClick: () => { P.inspiration = !P.inspiration; done(); } }]), P.inspiration ? '.lit' : '')),
-      hpBox(x),
-      P.hp === 0 ? deathBox() : null,
       h('div.box4',
         box('INITIATIVE', 'ลำดับเริ่ม', [sign(x.init), fxMark(x.rf('init', 'dex'))], null, () => explain('Initiative', [
           formula('ทอย Initiative', x.init, x.initParts, x.rf('init', 'dex')), ...helpBody('init')])),
@@ -217,13 +229,7 @@ export function renderSheet(root, c, tab, nav) {
           ...helpBody('defenses'),
           h('p.muted.small', 'ได้ Resistance จากของวิเศษหรือฟีเจอร์ที่เว็บไม่ได้คำนวณให้? เพิ่มเองได้ที่เมนู ⋯ → ปรับค่าเอง')])),
         box('CONDITIONS', 'สถานะ', nCond ? String(nCond) : '—', null, () => condSheet(), nCond ? '.bad' : '')),
-      nCond ? h('p.cond-line', '⚠ ติดอยู่: ', [...P.conditions.map(k => h('button.link', { onclick: () => showTerm(k.toLowerCase()) }, k)),
-        P.exh ? h('button.link', { onclick: () => condSheet() }, `Exhaustion ${P.exh}`) : null].filter(Boolean).flatMap((b, i) => (i ? [', ', b] : [b]))) : null,
       condFx(),
-      wildBanner(x),
-      P.conc ? h('div.conc-chip', h('span', '🧠 Concentration: ', h('b', D.spell[P.conc]?.name || P.conc)),
-        h('button.link', { onclick: () => explain('Concentration', helpBody('conc')) }, 'คืออะไร'),
-        h('button.btn.small', { onclick: () => { dropConc('เลิกเอง'); done(); } }, 'เลิกใช้สมาธิ')) : null,
       head('SAVING THROWS', 'การทอยเซฟ', infoBtn('save')),
       h('div.saves6', x.saves.map(sv => h('button.save6', { onclick: () => explain(`${ABIL_EN[sv.ab]} Saving Throw`, [
         formula('ทอยเซฟ', sv.bonus, sv.parts, x.rf('save', sv.ab)),

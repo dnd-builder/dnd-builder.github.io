@@ -746,7 +746,7 @@ ul.preview-list li { margin: 3px 0; }
 .hb-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wild-chip small { color: var(--muted); }
 .view-btn.on { background: var(--gold); color: #fff; border-color: var(--gold); }
-.sh-top.combat { gap: 10px; }
+.sh-main.combat { gap: 10px; }
 .card-page { display: grid; gap: 14px; padding-bottom: 30px; }
 .cd-head { display: flex; gap: 14px; align-items: center; padding-top: 10px; }
 .cd-head h1 { margin: 0; font-family: var(--display); color: var(--gold2); font-size: 1.7rem; line-height: 1.2; }
