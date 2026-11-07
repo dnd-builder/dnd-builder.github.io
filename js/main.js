@@ -14,6 +14,22 @@ import { renderGlossary, initGlossaryLinks } from './views/glossary.js';
 const app = $('#app');
 const nav = hash => { location.hash = hash; };
 
+// โหมดสี: อัตโนมัติตามเครื่อง → กลางวัน → กลางคืน (เก็บใน localStorage hh.theme, ตั้งค่าครั้งแรกใน index.html กันจอกระพริบ)
+const MODES = [['', '🌗', 'อัตโนมัติตามเครื่อง'], ['light', '☀️', 'กลางวัน'], ['dark', '🌙', 'กลางคืน']];
+function applyTheme(t, say) {
+  const root = document.documentElement;
+  if (t) root.dataset.theme = t; else delete root.dataset.theme;
+  try { t ? localStorage.setItem('hh.theme', t) : localStorage.removeItem('hh.theme'); } catch {}
+  const m = MODES.find(z => z[0] === t) || MODES[0], b = $('#theme-btn');
+  if (b) { b.textContent = m[1]; b.title = 'โหมดสี: ' + m[2]; }
+  const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', bg || '#121214');
+  if (say) toast('โหมดสี: ' + m[2]);
+}
+applyTheme(document.documentElement.dataset.theme || '');
+$('#theme-btn')?.addEventListener('click', () => { const i = MODES.findIndex(z => z[0] === (document.documentElement.dataset.theme || '')); applyTheme(MODES[(i + 1) % MODES.length][0], true); });
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => applyTheme(document.documentElement.dataset.theme || ''));
+
 function notFound() {
   app.replaceChildren(h('section.hero', h('h1', 'ไม่พบตัวละครนี้ในเครื่อง'), h('p', 'ตัวละครเก็บแยกตามเครื่อง/เบราว์เซอร์ ถ้าเล่นจากเครื่องอื่น ให้ใช้ลิงก์แชร์หรือไฟล์สำรอง'), h('a.btn', { href: '#/' }, 'กลับหน้าแรก')));
 }

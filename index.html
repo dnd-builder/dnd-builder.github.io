@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
+<script>try { var t = localStorage.getItem('hh.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 </head>
 <body>
 <header class="topbar">
@@ -22,6 +23,7 @@
     <a href="#/packs" data-nav="packs">แพ็ก</a>
     <a href="#/credits" data-nav="credits">เครดิต</a>
   </nav>
+  <button class="theme-btn" id="theme-btn" type="button" aria-label="โหมดสี"></button>
 </header>
 <main id="app" aria-live="polite"><div class="loading">กำลังโหลดข้อมูล…</div></main>
 <div id="sheet-root"></div>

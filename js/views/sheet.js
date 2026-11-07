@@ -37,7 +37,7 @@ export function renderSheet(root, c, tab, nav) {
   const ui = { act: 'all', feat: 'all', spQ: '', spLv: 'all', spF: '' };
 
   function draw() {
-    if (c.theme) { document.documentElement.style.setProperty('--gold', c.theme); document.documentElement.style.setProperty('--gold2', `color-mix(in srgb, ${c.theme} 60%, white)`); }
+    if (c.theme) { document.documentElement.style.setProperty('--gold', c.theme); document.documentElement.style.setProperty('--gold2', `color-mix(in srgb, ${c.theme} 60%, var(--mixbase))`); }
     else for (const k of ['--gold', '--gold2']) document.documentElement.style.removeProperty(k);
     const e = c.equipment;
     if (!e.items.length && !e.gp && (c.classId || c.bgId) && !e.touched) { rebuildEquipment(c); save(); }
