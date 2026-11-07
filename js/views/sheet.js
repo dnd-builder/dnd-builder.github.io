@@ -1,6 +1,6 @@
 // ใบตัวละครสำหรับใช้ตอนเล่น — โครงแบบ D&D Beyond: สแตททั้งหมดอยู่ส่วนบน + แท็บด้านล่าง
 // ใช้เต๋าจริง: แตะอะไรก็ได้ = เปิดการ์ดบอกสูตร (เว็บไม่ทอยให้)
-import { srcTag } from '../packs.js';
+import { srcTag, featFull, traitFull } from '../packs.js';
 import { D, loadAnimals } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet, uid } from '../util.js';
 import { md } from '../md.js';
@@ -667,11 +667,11 @@ export function renderSheet(root, c, tab, nav) {
     }
     if (show('species') && x.sp) {
       out.push(h('h2.sec', x.sp.name));
-      for (const t of x.sp.traits) out.push(featureCard({ name: t.name, text: t.text, th: D.th.species?.[x.sp.id]?.f?.[t.id] || (x.sp.open ? { t: t.t } : null), full: x.sp.open ? null : ['species', [x.sp.id, t.id]], pack: x.sp.open ? x.sp.pack : null, open: x.sp.open }), ...featureMath(t.name, x));
+      for (const t of x.sp.traits) out.push(featureCard({ name: t.name, text: t.text, th: D.th.species?.[x.sp.id]?.f?.[t.id] || (x.sp.open ? { t: t.t } : null), full: traitFull(x.sp, t.id), pack: x.sp.open ? x.sp.pack : null, open: x.sp.open }), ...featureMath(t.name, x));
     }
     if (show('feats') && x.featIds.length) {
       out.push(h('h2.sec', 'Feats'));
-      for (const id of new Set(x.featIds)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id], pack: f.pack })); }
+      for (const id of new Set(x.featIds)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: featFull(id), pack: f.pack, open: f.open })); }
     }
     return out;
   }

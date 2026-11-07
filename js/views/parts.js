@@ -2,7 +2,7 @@
 import { D, thFeature, loadFull } from '../data.js';
 import { h, icon, iconSvg, sheet, sign } from '../util.js';
 import { md } from '../md.js';
-import { fillHref, ddbHref, srcTag } from '../packs.js';
+import { fillHref, ddbHref, srcTag, openSpellFull } from '../packs.js';
 
 export const TYPE_LABEL = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', passive: 'ติดตัว', magic: 'Magic Action' };
 export const SCHOOL_TH = { Abjuration: 'ป้องกัน', Conjuration: 'เรียก/เสก', Divination: 'พยากรณ์', Enchantment: 'สะกดจิต', Evocation: 'พลังงาน', Illusion: 'ภาพลวง', Necromancy: 'ความตาย', Transmutation: 'แปรสภาพ' };
@@ -77,7 +77,7 @@ export function spellDetail(s, actions = [], extra = null) {
     s.pack ? h('span.pack-badge', srcTag(s)) : null,
     D.th.spells?.[s.id] ? h('p.th', D.th.spells[s.id]) : null,
     extra ? h('div.spell-math', extra) : null,
-    s.pack ? (D.thFull?.spells?.[s.id] ? h('div.md', { html: md(D.thFull.spells[s.id]) }) : null) : fullTh('spells', s.id),
+    s.open ? fullTh(openSpellFull(s.open), s.id) : s.pack ? (D.thFull?.spells?.[s.id] ? h('div.md', { html: md(D.thFull.spells[s.id]) }) : null) : fullTh('spells', s.id),
     h('dl.kv',
       h('dt', 'Casting Time'), h('dd', s.time),
       h('dt', 'Range'), h('dd', s.range),

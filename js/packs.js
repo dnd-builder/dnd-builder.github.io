@@ -70,6 +70,10 @@ export function setOpen(id, on) {
   try { localStorage.setItem(META, JSON.stringify(m)); } catch {}
   applyPacks();
 }
+/** กลุ่มไฟล์แปลเต็ม (data/th/full/<กลุ่ม>.json) ของคอนเทนต์ OGL */
+export const openSpellFull = src => 'open-spells-' + (src === 'toh' ? 'toh' : src?.startsWith('dmag') ? 'dmag' : 'small');
+export const featFull = id => String(id).startsWith('open:') ? ['open-feats', id] : ['feats', id];
+export const traitFull = (sp, tid) => sp.open ? ['open-species', [sp.id, tid]] : ['species', [sp.id, tid]];
 /** ป้ายแหล่งที่มา: 📖 หนังสือ OGL / 📦 แพ็ก */
 export const srcTag = x => (x?.open ? '📖 ' : '📦 ') + x?.pack;
 function openSub(s) {
@@ -77,7 +81,7 @@ function openSub(s) {
   return {
     ...s, pack, open: s.src, th: { s: th.s || '' },
     features: s.features.map(f => ({ ...f, pack, open: s.src, subName: s.name,
-      th: { t: th.f?.[f.id]?.t || f.t, s: th.f?.[f.id]?.s || '', tip: th.f?.[f.id]?.tip } }))   // แปลเต็ม: เพิ่ม full: ['open-subclasses', [s.id, f.id]] เมื่อมีไฟล์ data/th/full/open-subclasses.json (ขั้น 7)
+      th: { t: th.f?.[f.id]?.t || f.t, s: th.f?.[f.id]?.s || '', tip: th.f?.[f.id]?.tip }, full: ['open-subclasses', [s.id, f.id]] }))
   };
 }
 

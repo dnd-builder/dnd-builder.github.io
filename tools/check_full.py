@@ -25,6 +25,13 @@ SP = L('data/srd/spells.json')
 want['spells'] = [s['id'] for s in SP if s['level'] <= SPELL_MAX]
 want['spells-short'] = want['spells']
 want['glossary-short'] = [g['id'] for g in L('data/srd/glossary.json')]
+O = lambda k: L(f'data/open/{k}.json')
+want['open-subclasses'] = [f"{s['id']}/{f['id']}" for s in O('subclasses') for f in s['features']]
+want['open-backgrounds'] = [f"{b['id']}/{k}" for b in O('backgrounds') for k in ('text', 'feature') if b.get(k)]
+want['open-feats'] = [f['id'] for f in O('feats')]
+want['open-species'] = [f"{s['id']}/{t['id']}" for s in O('species') for t in s['traits'] + [t for l in s.get('lineages', []) for t in l['traits']]]
+OG = lambda src: 'open-spells-' + ('toh' if src == 'toh' else 'dmag' if src.startswith('dmag') else 'small')
+for x in O('spells'): want.setdefault(OG(x['src']), []).append(x['id'])
 bad = 0
 for g, ids in want.items():
   p = {'glossary-short': 'data/th/glossary.json', 'spells-short': 'data/th/spells.json'}.get(g, f'data/th/full/{g}.json')

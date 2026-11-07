@@ -8,7 +8,7 @@ import {
   SRD_PICKS, compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub, setSub,
   bgOf, spOf, spOpt,
 } from '../rules.js';
-import { featIdOf, listPacks, savePack, srcTag, openDocs, openOn, setOpen } from '../packs.js';
+import { featIdOf, listPacks, savePack, srcTag, openDocs, openOn, setOpen, featFull, traitFull } from '../packs.js';
 import { levelEditor, levelSummary, spellGaps } from './levelup.js';
 import { openToggles } from './packs.js';
 import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh, stubSubBox, acc, detailGroups, LEVEL_TH } from './parts.js';
@@ -373,8 +373,9 @@ export function renderWizard(root, c, stepId, nav) {
       h('div.grid', origin.map(o => choiceCard({ id: o.id, iconName: 'feat', title: o.name, desc: featTh(o.id)?.s, selected: ch.bgFeat === o.id, onClick: () => { ch.bgFeat = o.id; changed(); } })))));
     if (bg.feature || bg.lang || bg.text) out.push(acc({ key: 'bg-orig', title: 'ข้อมูลต้นฉบับ (2014)', sub: bg.feature ? `ฟีเจอร์: ${bg.feature.name}` : null, openSet },
       D.th.backgrounds?.[bg.id]?.desc ? h('p', D.th.backgrounds[bg.id].desc) : null,
-      bg.feature ? featureCard({ name: bg.feature.name, text: bg.feature.text, th: D.open.th.backgrounds?.[bg.id]?.f ? { s: D.open.th.backgrounds[bg.id].f } : null, tag: 'ฟีเจอร์ Background (2014) — ใช้ได้ถ้า DM อนุญาต', pack: bg.pack, open: bg.open }) : null,
+      bg.feature ? featureCard({ name: bg.feature.name, text: bg.feature.text, th: D.open.th.backgrounds?.[bg.id]?.f ? { s: D.open.th.backgrounds[bg.id].f } : null, tag: 'ฟีเจอร์ Background (2014) — ใช้ได้ถ้า DM อนุญาต', pack: bg.pack, open: bg.open, full: bg.open ? ['open-backgrounds', [bg.id, 'feature']] : null }) : null,
       bg.lang ? h('p.small', h('b', 'ภาษา (2014): '), bg.lang, h('span.muted', ' — กฎ 2024 ไม่ให้ภาษาจาก Background ถาม DM ก่อน')) : null,
+      bg.open && bg.text ? fullTh('open-backgrounds', [bg.id, 'text']) : null,
       original(bg.text, `ต้นฉบับ (EN) — ${bg.pack} (OGL)`)));
     return out;
   }
@@ -412,7 +413,7 @@ export function renderWizard(root, c, stepId, nav) {
       const feat = D.feat[fid];
       if (bg.feat && (!bg.custom || fid === 'magic-initiate')) out.push(acc({ key: 'bg-feat', title: `Origin Feat: ${bg.feat}`, sub: featTh(fid)?.s, need: fid === 'magic-initiate' && !c.choices.miAb, openSet },
         fid === 'magic-initiate' ? miAbility() : null,
-        feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: ['feats', fid], pack: feat.pack }) : null));
+        feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: featFull(fid), pack: feat.pack, open: feat.open }) : null));
     }
     out.push(h('h2.sec', 'รายละเอียดตัวละคร'), h('p.muted.small', 'ไม่บังคับ กรอกตอนไหนก็ได้ — แก้ทีหลังได้ที่แท็บ BACKGROUND และ NOTES ในใบตัวละคร'));
     for (const [k, en, th, el] of detailGroups(c.details, () => changed(false))) out.push(acc({ key: 'd-' + k, title: en, sub: th, openSet }, el));
@@ -470,7 +471,7 @@ export function renderWizard(root, c, stepId, nav) {
     }
     out.push(langAcc());
     out.push(h('h3.sec2', h('span', 'SPECIES TRAITS'), h('small', 'ความสามารถของเผ่า · แตะเพื่ออ่าน')));
-    out.push(spOf(c).traits.map(t => { const th = ths(sp.id).f?.[t.id]; return acc({ key: 'sp-t-' + t.id, title: t.name, sub: th?.s, openSet }, featureCard({ name: t.name, text: t.text, th: th || (sp.open ? { t: t.t } : null), full: sp.open ? null : ['species', [sp.id, t.id]], pack: sp.open ? sp.pack : null, open: sp.open })); }));
+    out.push(spOf(c).traits.map(t => { const th = ths(sp.id).f?.[t.id]; return acc({ key: 'sp-t-' + t.id, title: t.name, sub: th?.s, openSet }, featureCard({ name: t.name, text: t.text, th: th || (sp.open ? { t: t.t } : null), full: traitFull(sp, t.id), pack: sp.open ? sp.pack : null, open: sp.open })); }));
     return out;
   }
 
