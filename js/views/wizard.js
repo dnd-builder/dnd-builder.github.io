@@ -9,7 +9,7 @@ import {
   bgOf,
 } from '../rules.js';
 import { featIdOf, listPacks, savePack, srcTag, openDocs, openOn, setOpen } from '../packs.js';
-import { levelEditor, levelSummary } from './levelup.js';
+import { levelEditor, levelSummary, spellGaps } from './levelup.js';
 import { openToggles } from './packs.js';
 import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh, stubSubBox, acc, detailGroups, LEVEL_TH } from './parts.js';
 
@@ -35,6 +35,15 @@ export function renderWizard(root, c, stepId, nav) {
   let step = STEPS.findIndex(s => s.id === stepId);
   if (step < 0) step = 0;
   const openSet = new Set(); // แถบพับที่ผู้ใช้เปิดค้างไว้
+  // โหมดเลเวลอัป (#/edit/<id>/lvup): โชว์เฉพาะขั้นที่ต้องเลือกของใหม่ + แถบบอกว่าเหลืออะไร
+  const LV = stepId === 'lvup', prevMax = {};
+  let lvSteps = null, prevNeed = new Set();
+  if (LV) {
+    const p = structuredClone(c); p.levels = p.levels.slice(0, -1); p.level = p.levels.length;
+    try { const xp = compute(p); for (const b of xp.casting) if (b.cid) prevMax[b.cid] = b.maxLevel || 0; prevNeed = new Set([...missing(p), ...spellGaps(xp)]); } catch {}
+  }
+  const needStep = m => (/^[^:]+: (เลือก Cantrip|จดเวท|เตรียมเวท)|Book of Shadows/.test(m) ? 'spells' : SPECIES_MISS.test(m) ? 'species' : /ของ Background/.test(m) ? 'background'
+    : / \(Lv \d+\)$/.test(m) && /ASI|Epic Boon|ใส่แต้ม|Skilled|Magic Initiate|ผลทอย HP/.test(m) ? 'levels' : 'class');
   const ui = { spQ: '', spLv: 'all', spSel: false };
   c.settings = Object.assign({ hp: 'avg' }, c.settings);
   c.details = Object.assign({}, c.details);
@@ -48,7 +57,7 @@ export function renderWizard(root, c, stepId, nav) {
   function visibleSteps() {
     const x = compute(c);
     const hasSpells = x.casting.some(b => !b.fixed && (b.cantripMax || b.preparedMax));
-    return STEPS.filter(s => (s.id !== 'spells' || hasSpells) && (s.id !== 'levels' || c.level > 1));
+    return STEPS.filter(s => (s.id !== 'spells' || hasSpells) && (s.id !== 'levels' || c.level > 1) && (!lvSteps || lvSteps.includes(s.id)));
   }
 
   function draw() {
@@ -63,7 +72,7 @@ export function renderWizard(root, c, stepId, nav) {
         type: 'button', onclick: () => go(STEPS.indexOf(s)),
       }, h('b', s.n ? `${s.n} ${s.en}` : s.en), h('small', s.label))),
       h('button.step.to-sheet', { type: 'button', onclick: () => { S.save(c); nav(`#/c/${c.id}`); } }, h('b', 'ดูใบตัวละคร'), h('small', 'CHARACTER SHEET'))),
-      h('section.wz-body', body),
+      h('section.wz-body', LV ? lvBanner() : null, body),
       h('footer.wz-foot',
         h('button.btn', { disabled: pos === 0, onclick: () => go(STEPS.indexOf(steps[pos - 1])) }, '← ย้อน'),
         h('span.wz-pos', `${pos + 1}/${steps.length}`),
@@ -75,6 +84,15 @@ export function renderWizard(root, c, stepId, nav) {
     document.documentElement.style.setProperty('--topbar-h', (document.querySelector('.topbar')?.offsetHeight || 53) + 'px');
     document.documentElement.style.setProperty('--stepper-h', bar.offsetHeight + 'px');
     if (on) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
+  }
+  function lvBanner() {
+    const all = [...missing(c), ...spellGaps(compute(c))], left = all.filter(z => !prevNeed.has(z)), old = all.filter(z => prevNeed.has(z));
+    const back = () => { S.save(c); nav(`#/c/${c.id}`); };
+    return h('div.lvup-banner',
+      h('b', `⬆️ เลเวลอัปเป็น Lv ${c.level} แล้ว — เลือกของใหม่ตรงนี้`),
+      left.length ? [h('p.small', 'ของใหม่ที่ยังเหลือเลือก:'), h('ul', left.map(z => h('li', z)))] : h('p.ok', '✓ ของใหม่เลือกครบแล้ว พร้อมลุย!'),
+      old.length ? h('details', h('summary.small.muted', `ค้างมาจากก่อนหน้า ${old.length} อย่าง`), h('ul', old.map(z => h('li', z)))) : null,
+      h('button.btn.small' + (left.length ? '' : '.primary'), { onclick: back }, left.length ? 'ไว้ทีหลัง กลับใบตัวละคร' : 'เสร็จแล้ว กลับใบตัวละคร'));
   }
   // ขั้นไหนยังเลือกไม่ครบ (ติดจุด ⚠ ที่แถบขั้น)
   function stepNeed(id) {
@@ -594,7 +612,7 @@ export function renderWizard(root, c, stepId, nav) {
         const set = new Set(value);
         const levels = [...new Set(pool.map(s => s.level))].sort((a, b) => a - b);
         return h('div.block', h('h3', title, ' ', counter(set.size, max)),
-          levels.map(lv => h('div.sp-group', levels.length > 1 ? h('h4.lv', lv === 0 ? 'Cantrips' : `Level ${lv}`) : null,
+          levels.map(lv => h('div.sp-group', levels.length > 1 ? h('h4.lv', lv === 0 ? 'Cantrips' : `${LV && b.cid && lv > (prevMax[b.cid] ?? 99) ? '🆕 ' : ''}Level ${lv}`) : null,
             h('div.spell-list', pool.filter(s => s.level === lv).map(s => tag(spellRow(s, {
               selected: set.has(s.id), disabled: set.size >= max,
               onToggle: () => { set.has(s.id) ? set.delete(s.id) : set.size < max && set.add(s.id); onChange([...set]); },
@@ -642,5 +660,12 @@ export function renderWizard(root, c, stepId, nav) {
     ];
   }
 
+  if (LV) {
+    const fresh = new Set([...missing(c), ...spellGaps(compute(c))].filter(z => !prevNeed.has(z)).map(needStep));
+    lvSteps = ['class', 'levels', 'background', 'species', 'spells'].filter(id => fresh.has(id));
+    if (!lvSteps.length) lvSteps = ['class'];
+    lvSteps.push('done');
+    step = STEPS.findIndex(s => s.id === lvSteps[0]);
+  }
   draw();
 }

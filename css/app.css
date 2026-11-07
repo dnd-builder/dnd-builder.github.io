@@ -779,3 +779,9 @@ ul.cd-feats { margin: 0; padding-left: 18px; } ul.cd-feats li { margin: 3px 0; }
 .prose a { overflow-wrap: anywhere; }
 .open-toggles .check-row small { margin-left: 4px; }
 .open-block summary { cursor: pointer; padding: 8px 0; }
+.lvup-banner { border: 1px solid var(--gold2); background: #2a1a1b; border-radius: 12px; padding: 10px 14px; margin: 4px 0 14px; }
+.lvup-banner ul { margin: 4px 0 8px 18px; padding: 0; font-size: .9rem; }
+.lvup-banner .ok { margin: 6px 0; }
+.lvup-gain { border: 1px solid #3a2a2c; border-radius: 10px; padding: 6px 10px; margin: 8px 0; }
+.lvup-gain summary { cursor: pointer; padding: 4px 0; }
+.need-list li { color: var(--gold2); }
