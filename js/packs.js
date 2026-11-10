@@ -57,7 +57,7 @@ const metaGet = () => { try { return JSON.parse(localStorage.getItem(META)) || {
 export const OPEN_GROUPS = [['subclasses', 'ซับคลาส'], ['backgrounds', 'Background'], ['feats', 'Feat'], ['species', 'เผ่า'], ['spells', 'สเปล']];
 export function openDocs() {
   const o = {};
-  for (const [g] of OPEN_GROUPS) for (const x of D.open?.[g] || []) ((o[x.src] ||= {})[g] = (o[x.src][g] || 0) + 1);
+  for (const [g] of OPEN_GROUPS) for (const x of D.open?.[g] || []) if (!x.dup) ((o[x.src] ||= {})[g] = (o[x.src][g] || 0) + 1);
   return Object.entries(o).map(([id, n]) => ({ id, n, title: docTitle(id), label: OPEN_GROUPS.filter(([g]) => n[g]).map(([g, l]) => `${l} ${n[g]}`).join(' · ') }));
 }
 export const docTitle = id => D.open?.docs?.[id]?.title || id;
@@ -121,10 +121,10 @@ export function applyPacks() {
       if (s.th?.full) D.thFull.spells[s.id] = s.th.full;
     }
   }
-  // คอนเทนต์เปิด: ทำดัชนีไว้ทุกตัว (ตัวละครที่เลือกไว้ยังเปิดได้แม้ปิดหนังสือ) แต่ให้เลือกได้เฉพาะหนังสือที่เปิด
+  // คอนเทนต์เปิด (dup = ซ้ำกับของกฎ 2024 → ไม่ให้เลือกใหม่): ทำดัชนีไว้ทุกตัว (ตัวละครที่เลือกไว้ยังเปิดได้แม้ปิดหนังสือ) แต่ให้เลือกได้เฉพาะหนังสือที่เปิด
   D.openSub ||= Object.fromEntries((D.open?.subclasses || []).map(s => [s.id, openSub(s)]));
   const openSubs = {};
-  for (const s of Object.values(D.openSub)) if (D.cls[s.classId] && openOn(s.src)) (openSubs[s.classId] ||= []).push(s);
+  for (const s of Object.values(D.openSub)) if (D.cls[s.classId] && openOn(s.src) && !D.open.subclasses.find(o => o.id === s.id)?.dup) (openSubs[s.classId] ||= []).push(s);
   // Background / Feat จากหนังสือ OGL
   const openBg = (D.open?.backgrounds || []).map(b => ({ ...b, pack: docTitle(b.src), open: b.src, tool: b.tool || '—', equipment: bgEquipText(b) }));
   const openFeat = (D.open?.feats || []).map(f => ({ ...f, pack: docTitle(f.src), open: f.src, tag: `${f.category} Feat (Prerequisite: ${f.prereq})` }));
@@ -136,11 +136,11 @@ export function applyPacks() {
   for (const x of openSp) {
     const t = D.open.th.species?.[x.id] || {};
     D.th.species[x.id] = { tag: t.tag || '', desc: t.s || '', f: t.f || {}, ln: t.ln || {} };
-    if (openOn(x.src)) species.push(x);
+    if (openOn(x.src) && !x.dup) species.push(x);
   }
   // สเปลจากหนังสือ OGL (ชื่อซ้ำ SRD ถูกตัดตั้งแต่ตัวแปลง)
   const openSpell = (D.open?.spells || []).map(x => ({ ...x, pack: docTitle(x.src), open: x.src }));
-  for (const x of openSpell) { const t = D.open.th.spells?.[x.id]; if (t) D.th.spells[x.id] = t; if (openOn(x.src)) spells.push(x); }
+  for (const x of openSpell) { const t = D.open.th.spells?.[x.id]; if (t) D.th.spells[x.id] = t; if (openOn(x.src) && !x.dup) spells.push(x); }
   D.species = species; D.sp = { ...Object.fromEntries(openSp.map(x => [x.id, x])), ...Object.fromEntries(species.map(x => [x.id, x])) };
   D.backgrounds = bgs; D.feats = feats; D.spells = spells;
   const idx = arr => Object.fromEntries(arr.map(x => [x.id, x]));

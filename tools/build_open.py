@@ -228,6 +228,18 @@ def species():
     return out
 
 CLS = {'wizard', 'sorcerer', 'warlock', 'cleric', 'bard', 'druid', 'paladin', 'ranger'}
+# ของ 2014 ที่ซ้ำกับของในกฎ 2024 → ติด dup (ซ่อนจากรายการให้เลือก แต่ยังอยู่ในดัชนี ตัวละครเก่าเปิดได้)
+DUP_2024 = {'Drow': 'Elf (Drow Lineage)', 'Eldritch Trickster': 'Arcane Trickster', 'Arcane Warrior': 'Eldritch Knight',
+            'Mischief Domain': 'Trickery Domain', 'School of Illusions and Phantasms': 'Illusionist',
+            'School of Divining and Soothsaying': 'Diviner', 'The Ancient Fey Court': 'Archfey Patron',
+            'The Great Elder Thing': 'Great Old One Patron', 'Way of Shadowdancing': 'Warrior of Shadow',
+            'Wyrd Magic': 'Wild Magic Sorcery', 'Circle of the Many': 'Circle of the Moon', 'Eye bite': 'Eyebite'}
+
+def mark_dup(items):
+    for x in items:
+        if x['name'] in DUP_2024: x['dup'] = DUP_2024[x['name']]
+    return items
+
 def spells(docs):
     """สเปล Open5e → โครงเดียวกับ data/srd/spells.json (ชื่อซ้ำ SRD ข้ามไป — ใช้ของ SRD)"""
     srd = {x['name'].lower() for x in json.load(open(os.path.join(os.path.dirname(OUT), 'srd', 'spells.json')))}
@@ -272,9 +284,9 @@ def docs():
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
-    subs = subclasses()
+    subs = mark_dup(subclasses())
     json.dump(subs, open(os.path.join(OUT, 'subclasses.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     json.dump(docs(), open(os.path.join(OUT, 'docs.json'), 'w'), ensure_ascii=False, indent=1)
     for k, fn in (('backgrounds', backgrounds), ('feats', feats), ('species', species), ('spells', lambda: spells(['toh', 'o5e', 'kp', 'warlock', 'dmag', 'dmag-e']))):
-        v = fn(); json.dump(v, open(os.path.join(OUT, k + '.json'), 'w'), ensure_ascii=False, separators=(',', ':')); print(k, len(v))
+        v = mark_dup(fn()); json.dump(v, open(os.path.join(OUT, k + '.json'), 'w'), ensure_ascii=False, separators=(',', ':')); print(k, len(v))
     print('subclasses', len(subs), 'features', sum(len(s['features']) for s in subs))
