@@ -12,6 +12,8 @@ import { formula, explain, attackBody, dmgText, helpBody, infoBtn, spellMath, fx
 import { COND_FX, flagSum } from '../fx.js';
 import { showTerm } from './glossary.js';
 import * as T from './turn.js';
+import { setDice, diceOn, die as rollDie, rollD20, show } from '../dice.js';
+import { charText } from './card.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
 const TABS = [['main', 'MAIN', 'ข้อมูลหลัก'], ['actions', 'ACTIONS', 'การกระทำ'], ['spells', 'SPELLS', 'เวท'], ['inventory', 'INVENTORY', 'ของในกระเป๋า'], ['features', 'FEATURES & TRAITS', 'ความสามารถ'], ['background', 'BACKGROUND', 'ภูมิหลัง'], ['notes', 'NOTES', 'โน้ต'], ['extras', 'EXTRAS', 'สัตว์คู่ใจ']];
@@ -33,6 +35,7 @@ export function renderSheet(root, c, tab, nav) {
   const save = () => S.autosave(c);
   const redraw = () => draw();
   const done = () => { save(); redraw(); };
+  setDice({ on: !!c.settings?.online, name: c.name || 'Character', onAttack: () => { if (!P.turn) return ''; const m = T.attack(P, curX); done(); return m; } });
   let curX = null;
   const ui = { act: 'all', feat: 'all', spQ: '', spLv: 'all', spF: '' };
 
@@ -151,9 +154,24 @@ export function renderSheet(root, c, tab, nav) {
       h('button.menu-item', { onclick: async () => { close(); await share(); } }, '🔗 แชร์ลิงก์ตัวละคร'),
       h('button.menu-item', { onclick: () => { close(); S.exportFile([c]); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); } }, '💾 ดาวน์โหลดไฟล์สำรอง'),
       h('button.menu-item', { onclick: () => { close(); window.print(); } }, '🖨️ ปริ้น / เซฟเป็น PDF'),
+      h('button.menu-item', { onclick: () => { close(); toggleOnline(); } }, c.settings?.online ? '🎲 โหมดออนไลน์: เปิดอยู่ (กดเพื่อปิด)' : '🎲 เปิดโหมดออนไลน์ (ทอยเต๋าในเว็บ)'),
+      h('button.menu-item', { onclick: () => { close(); copyChar(); } }, '📋 คัดลอกตัวละครเป็นข้อความ (แปะให้ AI DM)'),
       h('button.menu-item', { onclick: () => { close(); customSheet(); } }, '🛠️ ปรับค่าเอง (ของวิเศษ / สิ่งที่ DM ให้)'),
       h('button.menu-item', { onclick: () => { close(); const copy = structuredClone(c); delete copy.id; copy.name = (c.name || 'Character ') + ' (สำเนา)'; S.save(copy); nav(`#/c/${copy.id}`); toast('ทำสำเนาแล้ว'); } }, '📄 ทำสำเนา'),
       h('button.menu-item.danger', { onclick: async () => { close(); if (await confirmSheet('ลบตัวละคร?', `ลบ "${c.name || 'Character ไร้ชื่อ'}" ออกจากเครื่องนี้ (ถ้าไม่ได้สำรองไว้จะกู้คืนไม่ได้)`, 'ลบเลย')) { S.remove(c.id); nav('#/'); } } }, '🗑️ ลบตัวละคร')));
+  }
+
+  function toggleOnline() {
+    const on = !c.settings?.online;
+    c.settings = { ...(c.settings || {}), online: on || null };
+    setDice({ on }); S.save(c); redraw();
+    toast(on ? '🎲 โหมดออนไลน์: กดดูค่าไหนก็มีปุ่มทอยให้ · ผลทอยกดคัดลอกไปแปะในแชตได้' : 'ปิดโหมดออนไลน์แล้ว — กลับไปทอยเต๋าจริง');
+  }
+
+  async function copyChar() {
+    const t = charText(c);
+    try { await navigator.clipboard.writeText(t); toast('คัดลอกข้อมูลตัวละครแล้ว แปะให้ AI DM ได้เลย'); }
+    catch { sheet('คัดลอกข้อความนี้', h('textarea.inp', { rows: 14, readonly: true, onfocus: e => e.target.select() }, t)); }
   }
 
   async function levelDown() {
@@ -235,7 +253,7 @@ export function renderSheet(root, c, tab, nav) {
       condFx(),
       head('SAVING THROWS', 'การทอยเซฟ', infoBtn('save')),
       h('div.saves6', x.saves.map(sv => h('button.save6' + (sv.prof ? '.prof' : ''), { onclick: () => explain(`${ABIL_EN[sv.ab]} Saving Throw`, [
-        formula('ทอยเซฟ', sv.bonus, sv.parts, x.rf('save', sv.ab)),
+        formula('ทอยเซฟ', sv.bonus, sv.parts, x.rf('save', sv.ab), 'd20', { tag: `${ABIL_EN[sv.ab]} Save` }),
         D.th.help?.abilities?.[sv.ab] ? h('p.th', h('b', `เซฟ ${ABIL_SHORT[sv.ab]} ใช้ตอน: `), D.th.help.abilities[sv.ab].save) : null,
         ...helpBody('save').slice(1),
         sv.prof ? h('p.muted.small', '● เราชำนาญเซฟนี้ จึงได้บวก Proficiency ด้วย') : null]) },
@@ -283,9 +301,9 @@ export function renderSheet(root, c, tab, nav) {
     explain(`${ABIL_EN[a]} (${ABIL_SHORT[a]})`, [
       h('p.th', H?.what || `${ABIL_SHORT[a]} คือ ${ABIL_TH[a]}`),
       h('p.small', `ค่าพลัง ${x.score[a]} → ตัวบวก ${sign(x.m[a])} (คิดจาก ค่าพลังลบ 10 แล้วหาร 2 ปัดลง)`),
-      formula(`ทอย ${ABIL_SHORT[a]} Check เปล่า ๆ`, x.m[a], [[ABIL_SHORT[a], x.m[a]]], x.rf('check', a)),
+      formula(`ทอย ${ABIL_SHORT[a]} Check เปล่า ๆ`, x.m[a], [[ABIL_SHORT[a], x.m[a]]], x.rf('check', a), 'd20', { tag: `${ABIL_EN[a]} Check` }),
       H?.check ? h('p.help-use', h('b', 'Check ใช้ตอน: '), H.check) : null,
-      formula(`ทอย ${ABIL_SHORT[a]} Saving Throw`, sv.bonus, sv.parts, x.rf('save', a)),
+      formula(`ทอย ${ABIL_SHORT[a]} Saving Throw`, sv.bonus, sv.parts, x.rf('save', a), 'd20', { tag: `${ABIL_EN[a]} Save` }),
       H?.save ? h('p.help-use', h('b', 'เซฟใช้ตอน: '), H.save) : null,
       sks.length ? h('p.small', h('b', 'สกิลที่ใช้ค่านี้: '), sks.map(s => `${s.name} ${sign(s.bonus)}`).join(' · ')) : null,
       H?.extra ? h('p.small', '💡 ' + H.extra) : null,
@@ -329,7 +347,7 @@ export function renderSheet(root, c, tab, nav) {
     const dc = Math.min(30, Math.max(10, Math.floor(dmg / 2))), sv = x.saves.find(z => z.ab === 'con'), sp = D.spell[P.conc];
     explain(`เซฟสมาธิ: ${sp?.name || ''}`, [
       h('p', `โดนดาเมจ ${dmg} ตอนกำลังใช้สมาธิ — ต้องทอยเซฟ CON ให้ได้ ${dc} ขึ้นไป ไม่งั้นเวทหลุด`),
-      formula('ทอยเซฟ CON', sv.bonus, sv.parts, x.rf('save', 'con')),
+      formula('ทอยเซฟ CON', sv.bonus, sv.parts, x.rf('save', 'con'), 'd20', { tag: 'CON Save (Concentration)' }),
       h('p.muted.small', `DC = 10 หรือครึ่งหนึ่งของดาเมจ (${Math.floor(dmg / 2)}) เอาค่าที่สูงกว่า และไม่เกิน 30`)], [
       { label: 'ไม่ผ่าน — สมาธิหลุด', onClick: () => { dropConc(); done(); } },
       { label: 'ผ่าน ยังรักษาสมาธิไว้', primary: true }]);
@@ -375,7 +393,17 @@ export function renderSheet(root, c, tab, nav) {
     const pips = (k, label) => h('div.death-row', h('span', label), [0, 1, 2].map(i => h('button.pip' + (P.death[k] > i ? '.on' : ''), { 'aria-label': `${label} ${i + 1}`, onclick: () => { P.death[k] = P.death[k] > i ? i : i + 1; done(); } })));
     return h('div.card.death', h('h3.sec2', h('span', 'DEATH SAVES'), h('small', 'ทอยกันตาย'), infoBtn('death')),
       h('p.small', 'HP เหลือ 0 = หมดสติ ทุกต้นเทิร์นให้ทอย d20 เปล่า ๆ: ได้ 10 ขึ้นไปนับสำเร็จ ต่ำกว่า 10 นับล้มเหลว · ได้ 20 ฟื้นขึ้นมามี HP 1 · ได้ 1 นับล้มเหลว 2 ครั้ง · สำเร็จครบ 3 = อาการคงที่ ล้มเหลวครบ 3 = ตาย'),
-      pips('s', 'สำเร็จ'), pips('f', 'ล้มเหลว'));
+      pips('s', 'สำเร็จ'), pips('f', 'ล้มเหลว'),
+      diceOn() ? h('button.btn.primary.sm', { onclick: rollDeath }, '🎲 ทอย Death Save') : null);
+  }
+  function rollDeath() {
+    const r = rollD20('Death Save', -2 * (P.exh || 0)), d = P.death = P.death || { s: 0, f: 0 };
+    if (r.nat === 20) { P.hp = 1; P.death = { s: 0, f: 0 }; r.note = 'ฟื้นขึ้นมามี HP 1'; }
+    else if (r.nat === 1) { d.f = Math.min(3, d.f + 2); r.note = `ล้มเหลว 2 ช่อง (${d.f}/3)`; }
+    else if (r.total >= 10) { d.s = Math.min(3, d.s + 1); r.note = d.s >= 3 ? 'สำเร็จครบ 3 — อาการคงที่ (Stable)' : `สำเร็จ ${d.s}/3`; }
+    else { d.f = Math.min(3, d.f + 1); r.note = `ล้มเหลว ${d.f}/3`; }
+    if (d.f >= 3) r.note = '💀 ล้มเหลวครบ 3 — ตัวละครตาย';
+    show(r); done();
   }
   // ผลของสถานะที่ติดอยู่ (เว็บใส่ป้าย Advantage/Disadvantage บนสูตรให้แล้ว)
   function condFx() {
@@ -436,7 +464,7 @@ export function renderSheet(root, c, tab, nav) {
         P.hdu[die] = (P.hdu[die] || 0) + 1; if (P.hp === 0) P.death = { s: 0, f: 0 }; P.hp = Math.min(x.hpMax, P.hp + gain); done();
         log.textContent = `d${die} ได้ ${r} ${sign(x.m.con)} (CON) = ฟื้น ${gain} HP → ตอนนี้ ${P.hp}/${x.hpMax}`;
         fill();
-      } }, 'ใช้'));
+      } }, 'ใช้'), diceOn() ? h('button.btn.sm', { disabled: left <= 0, 'aria-label': `ทอย d${die}`, onclick: () => { inp.value = rollDie(die); } }, '🎲') : null);
     }));
     fill();
     sheet('พักสั้น (1 ชั่วโมง)', h('div',
@@ -466,7 +494,7 @@ export function renderSheet(root, c, tab, nav) {
       const left = T.resLeft(P, f.r);
       return item({ name: f.name, s: f.th.s, tag: TYPE_LABEL[f.th.t], note: f.r ? `เหลือ ${left}/${f.r.max}` : null, open: () => T.useFeature(P, f, done) }, { off: left === 0 });
     });
-    const atk = a => h('button.atk', { onclick: () => explain(a.name, attackBody(a, x), [T.pinAct(P, 'atk:' + a.id, done), ...(P.turn ? [{ label: 'ใช้โจมตี', primary: true, onClick: () => { toast(`⚔️ ${a.name} · ${T.attack(P, x) || 'โจมตี'}`); done(); } }] : [])]) },
+    const atk = a => h('button.atk', { onclick: () => explain(a.name, attackBody(a, x), [T.pinAct(P, 'atk:' + a.id, done), ...(P.turn && !diceOn() ? [{ label: 'ใช้โจมตี', primary: true, onClick: () => { toast(`⚔️ ${a.name} · ${T.attack(P, x) || 'โจมตี'}`); done(); } }] : [])]) },
       h('div', h('b', a.name), a.mastery ? h('i.tag.mastery', a.mastery) : null, h('small', a.props || (a.id === 'unarmed' ? 'ต่อย เตะ โขก' : ''))),
       h('span.atk-hit', sign(a.hit), fxMark(x.rf('atk', a.ab))), h('span.atk-dmg', ...dmgText(a.dmg)));
     if (show('attack')) out.push(head('ATTACKS', 'การโจมตี', x.atkPer > 1 ? h('i.tag', `Extra Attack ×${x.atkPer}`) : null),
@@ -542,7 +570,7 @@ export function renderSheet(root, c, tab, nav) {
           h('div.formula', h('div.f-main', h('span', 'DC'), h('b', String(b.dc))), h('div.f-parts', h('span', '8 + ', h('b', sign(x.pb)), ' (Prof) + ', h('b', sign(x.m[b.ab])), ` (${ABIL_SHORT[b.ab]})`))),
           ...helpBody('dc')])),
         box('SPELL ATTACK', 'โจมตีด้วยเวท', sign(b.atk), null, () => explain('Spell Attack', [
-          formula('ทอยโจมตีด้วยเวท', b.atk, [['Proficiency', x.pb], [ABIL_SHORT[b.ab], x.m[b.ab]]], x.rf('atk', b.ab)),
+          formula('ทอยโจมตีด้วยเวท', b.atk, [['Proficiency', x.pb], [ABIL_SHORT[b.ab], x.m[b.ab]]], x.rf('atk', b.ab), 'd20', { tag: 'Spell Attack' }),
           ...helpBody('spellatk')])),
         box('ABILITY', 'ค่าที่ใช้ร่าย', ABIL_SHORT[b.ab], null, () => abilInfo(b.ab, x))));
       if (Object.keys(b.slots).length) {

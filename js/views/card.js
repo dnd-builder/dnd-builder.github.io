@@ -27,6 +27,38 @@ export function cardData(c) {
   };
 }
 
+/** ข้อความสรุปตัวละครสำหรับแปะให้ AI DM / เพื่อนในแชต (โหมดออนไลน์) */
+export function charText(c) {
+  const d = cardData(c), x = d.x, P = c.play || {};
+  const hp = P.hp ?? x.hpMax, L = [];
+  L.push(`[ตัวละครผู้เล่น — D&D 2024] ${d.name}`);
+  L.push(`${d.line} · เลเวล ${d.level}${d.bg ? ` · ภูมิหลัง ${d.bg}` : ''}${d.align ? ` · ${d.align}` : ''}`);
+  L.push(`HP ${hp}/${x.hpMax}${P.temp ? ` (+${P.temp} Temp)` : ''} · AC ${x.ac} · Speed ${x.speed} ft · Initiative ${sign(x.init)} · Proficiency ${sign(x.pb)}`);
+  L.push('ค่าพลัง: ' + ABIL.map(a => `${ABIL_SHORT[a]} ${x.score[a]} (${sign(x.m[a])})`).join(' · '));
+  L.push('Saving Throws: ' + x.saves.map(v => `${ABIL_SHORT[v.ab]} ${sign(v.bonus)}${v.prof ? '*' : ''}`).join(' · ') + ' (* = ชำนาญ)');
+  const sk = x.skills.filter(s => s.prof || s.exp);
+  if (sk.length) L.push('Skills ที่ชำนาญ: ' + sk.map(s => `${s.name} ${sign(s.bonus)}${s.exp ? ' (Expertise)' : ''}`).join(', '));
+  L.push(`Passive Perception ${10 + (x.skills.find(s => s.name === 'Perception')?.bonus || 0)}`);
+  if (d.attacks.length) L.push('การโจมตี: ' + d.attacks.map(a => `${a.name} ${sign(a.hit)} to hit, ${a.dmg}`).join(' · ') + (x.atkPer > 1 ? ` · Extra Attack (ตี ${x.atkPer} ครั้งต่อ Attack action)` : ''));
+  for (const b of x.casting) L.push(`เวท${b.source ? ` (${b.source})` : ''}: Spell save DC ${b.dc} · Spell attack ${sign(b.atk)}`);
+  if (d.spells.length) {
+    const by = {};
+    for (const s of d.spells) (by[s.level] = by[s.level] || []).push(s.name);
+    L.push('เวทที่ใช้ได้: ' + Object.keys(by).map(l => `${+l === 0 ? 'Cantrip' : `Level ${l}`}: ${by[l].join(', ')}`).join(' | '));
+    const sl = x.casting.flatMap(b => Object.entries(b.slots || {}).map(([l, n]) => [(b.pact ? 'p' : '') + l, l, n, b.pact]));
+    const seen = new Set(), uniq = sl.filter(([k]) => !seen.has(k) && seen.add(k));
+    if (uniq.length) L.push('Spell slots (เหลือ/ทั้งหมด): ' + uniq.map(([k, l, n, pact]) => `${pact ? 'Pact ' : ''}Lv${l} ${n - (P.slots?.[k] || 0)}/${n}`).join(' · '));
+  }
+  const res = (x.res || []).filter(r => r.max);
+  if (res.length) L.push('ทรัพยากร: ' + res.map(r => `${r.name} ${r.max - (P.res?.[r.id] || 0)}/${r.max}${r.reset === 'short' ? ' (พักสั้นคืน)' : r.reset === 'long' ? ' (พักยาวคืน)' : ''}`).join(' · '));
+  if (d.feats.length) L.push('ฟีเจอร์: ' + d.feats.map(f => f.name).join(', '));
+  const cond = [...(P.conditions || []), P.exh ? `Exhaustion ${P.exh}` : null].filter(Boolean);
+  if (cond.length) L.push('สถานะที่ติดอยู่: ' + cond.join(', '));
+  if (d.story) L.push(`ประวัติย่อ: ${d.story.slice(0, 400)}${d.story.length > 400 ? '…' : ''}`);
+  L.push('(ผู้เล่นทอยเต๋าเองในเว็บ แล้วจะแปะผลทอยมาให้)');
+  return L.join('\n');
+}
+
 export async function renderCard(root, mode, key, nav) {
   let c, shared = mode === 'view';
   try { c = shared ? await S.decodeChar(key) : S.get(key); } catch { c = null; }

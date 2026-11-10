@@ -4,6 +4,7 @@ import { h, sheet } from '../util.js';
 import { ABIL_SHORT, col } from '../rules.js';
 import { flagSum } from '../fx.js';
 import { fullTh } from './parts.js';
+import { rollRow, exprRow } from '../dice.js';
 
 const pm = n => (n < 0 ? '− ' : '+ ') + Math.abs(n);
 
@@ -19,12 +20,13 @@ export function dmgRange(s) {
 export const dmgText = s => [s, dmgRange(s) ? h('small.rng', ` (${dmgRange(s)})`) : null];
 
 /** กล่องสูตร: label: d20 + 5 แล้วแตกรายการ STR +3 · Prof +2 · flags = ป้าย Advantage/Disadvantage จาก x.rf() */
-export function formula(label, total, parts = [], flags = [], die = 'd20') {
+export function formula(label, total, parts = [], flags = [], die = 'd20', opt = {}) {
   const extra = (flags || []).filter(f => f.t === 'plus' || f.t === 'minus').map(f => ` ${f.t === 'plus' ? '+' : '−'} ${f.add}`).join('');
   return h('div.formula',
     h('div.f-main', h('span', label), h('b', `${flagSum(flags) === 'fail' ? '—' : `${die} ${pm(total)}${extra}`}`)),
     parts.length ? h('div.f-parts', parts.map(([l, n]) => h('span', l, ' ', h('b', (n < 0 ? '−' : '+') + Math.abs(n))))) : null,
-    fxNode(flags));
+    fxNode(flags),
+    die === 'd20' ? rollRow(opt.tag || label.replace(/^ทอย\s*/, ''), total, flags, opt) : null);
 }
 
 /** ป้ายบอกผล Condition/เอฟเฟกต์ใต้สูตร */
@@ -59,10 +61,11 @@ export function attackBody(a, x) {
     ...D.weaponProps.filter(p => new RegExp(`\\b${p.name}\\b`, 'i').test(a.props || '')).map(p => p.id)];
   const mod = x.m[a.ab] || 0;
   return [
-    formula('ทอยโจมตี', a.hit, a.hitParts || [], x.rf?.('atk', a.ab)),
+    formula('ทอยโจมตี', a.hit, a.hitParts || [], x.rf?.('atk', a.ab), 'd20', { tag: `${a.name} Attack`, atk: true, dmg: a.dmg, name: a.name }),
     h('div.formula',
       h('div.f-main', h('span', 'ดาเมจ'), h('b', ...dmgText(a.dmg))),
-      h('div.f-parts', a.wild ? h('span', 'ตามค่าสถานะของร่างสัตว์ (รวมค่าพลังแล้ว)') : /\d+d\d+/.test(a.dmg) ? [h('span', 'ลูกเต๋าอาวุธ'), h('span', `${ABIL_SHORT[a.ab]} `, h('b', (mod < 0 ? '−' : '+') + Math.abs(mod)))] : h('span', `1 + ${ABIL_SHORT[a.ab]} (ไม่มีลูกเต๋า)`))),
+      h('div.f-parts', a.wild ? h('span', 'ตามค่าสถานะของร่างสัตว์ (รวมค่าพลังแล้ว)') : /\d+d\d+/.test(a.dmg) ? [h('span', 'ลูกเต๋าอาวุธ'), h('span', `${ABIL_SHORT[a.ab]} `, h('b', (mod < 0 ? '−' : '+') + Math.abs(mod)))] : h('span', `1 + ${ABIL_SHORT[a.ab]} (ไม่มีลูกเต๋า)`)),
+      exprRow(`${a.name} Damage`, a.dmg)),
     h('p.muted.small', 'ทอยได้ 20 = Critical Hit: ทอยลูกเต๋าดาเมจ 2 เท่า (ตัวบวกไม่คูณ) · DM บอกเองว่าโดนหรือไม่'),
     a.prof === false ? h('p.tip', '⚠ ยังไม่ชำนาญอาวุธนี้ — ไม่ได้บวก Proficiency') : null,
     x.atkPer > 1 ? h('p.small', `⚔️ Extra Attack: ใช้ Attack action แล้วตีได้ ${x.atkPer} ครั้ง`) : null,
@@ -95,7 +98,7 @@ export function spellMath(s, b, x) {
   if (/spell attack/i.test(t)) {
     const parts = [['Proficiency', x.pb], [ab, mod]], rest = b.atk - x.pb - mod;
     if (rest) parts.push(['อื่น ๆ', rest]);
-    out.push(formula('ทอยโจมตีด้วยเวท', b.atk, parts, x.rf?.('atk', b.ab)));
+    out.push(formula('ทอยโจมตีด้วยเวท', b.atk, parts, x.rf?.('atk', b.ab), 'd20', { tag: `${s.name} Spell Attack` }));
   }
   const sv = t.match(/(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/);
   if (sv) out.push(h('div.formula', h('div.f-main', h('span', `เป้าหมายทอยเซฟ ${AB_FULL[sv[1]]}`), h('b', `DC ${b.dc}`)), h('div.f-parts', h('span', 'บอก DM ว่า DC เท่านี้ — DM เป็นคนทอยให้เป้าหมาย'))));
@@ -118,7 +121,8 @@ export function spellMath(s, b, x) {
     const potent = s.level === 0 && /^ดาเมจ/.test(eff.label) && ((b.cid === 'cleric' && x.picks?.blessedStrikes === 'Potent Spellcasting') || (b.cid === 'druid' && x.picks?.elementalFury === 'Potent Spellcasting'));
     if (potent) { eff.k += x.m.wis || 0; note = [note, `Potent Spellcasting: บวก WIS ${x.m.wis >= 0 ? '+' : ''}${x.m.wis}`].filter(Boolean).join(' · '); }
     const str = dice(n, eff.d, eff.k);
-    out.push(h('div.formula', h('div.f-main', h('span', eff.label), h('b', ...dmgText(str))), note ? h('div.f-parts', h('span', note)) : null));
+    out.push(h('div.formula', h('div.f-main', h('span', eff.label), h('b', ...dmgText(str))), note ? h('div.f-parts', h('span', note)) : null,
+      exprRow(`${s.name} ${/^ฟื้น/.test(eff.label) ? 'Healing' : 'Damage'}`, str, /spell attack/i.test(t))));
     // อัปสลอต
     const u = t.match(/(?:damage|healing) increases by (\d+)d(\d+) for each spell slot level above (\d+)/);
     if (u && s.level > 0) {

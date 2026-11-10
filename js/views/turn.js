@@ -7,6 +7,7 @@ import { showTerm } from './glossary.js';
 import { dmgRange, dmgText, spellMath, featureMath, formula, explain, attackBody } from './explain.js';
 import { col, ABIL_SHORT } from '../rules.js';
 import { FX_PRESET, COND_FX, roundsOf } from '../fx.js';
+import { rollD20, show, diceOn } from '../dice.js';
 
 const INCAP = ['Incapacitated', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious'];
 const NO_MOVE = ['Grappled', 'Restrained', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious'];
@@ -243,6 +244,7 @@ export function attackSheet(x, P, kind, title, done) {
   let close;
   close = sheet(title, h('div.card.list', x.attacks.map(a => h('div.atk', { onclick: () => {
     const m = kind === 'a' ? attack(P, x) : spend(P, kind);
+    if (diceOn()) { const rr = rollD20(`${a.name} Attack`, a.hit, x.rf?.('atk', a.ab), null, { dmg: a.dmg, name: a.name }); if (m) rr.note = m; close(); done(); show(rr); return; }
     const r = dmgRange(a.dmg);
     toast(`⚔️ ${a.name}: ทอย d20 ${sign(a.hit)} · ดาเมจ ${a.dmg}${r ? ` (${r})` : ''}${m ? ' · ' + m : ''}`);
     close(); done();
@@ -496,7 +498,7 @@ function resolveRef(ref, x, P, done) {
   if (t === 'atk') {
     const a = x.attacks.find(z => z.id === id);
     return a && { label: a.name, icon: '⚔️', open: () => explain(a.name, attackBody(a, x), [pinAct(P, ref, done),
-      ...(P.turn ? [{ label: 'ใช้โจมตี', primary: true, onClick: () => { toast(`⚔️ ${a.name} · ${attack(P, x) || 'โจมตี'}`); done(); } }] : [])]) };
+      ...(P.turn && !diceOn() ? [{ label: 'ใช้โจมตี', primary: true, onClick: () => { toast(`⚔️ ${a.name} · ${attack(P, x) || 'โจมตี'}`); done(); } }] : [])]) };
   }
   if (t === 'basic') { const b = BASIC.find(z => z[0] === id); return b && { label: b[1], icon: '●', open: () => basicSheet(P, b, done) }; }
   if (t === 'move') { const m = MOVES.find(z => z.id === id); return m && { label: m.name.split(' (')[0], icon: '🤸', open: () => moveCard(m, x, P, done) }; }
