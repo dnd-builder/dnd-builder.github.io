@@ -31,6 +31,8 @@ const ths = id => D.th.species?.[id] || {};
 const featTh = id => D.th.feats?.[id];
 const packSub = (x, base) => (x?.pack ? [base, srcTag(x)].filter(Boolean).join(' · ') : base);
 
+const FLT = {}; // ตัวกรองรายการเลือก (ชิปแหล่งที่มา + ค้นหา) จำข้าม redraw
+
 export function renderWizard(root, c, stepId, nav) {
   let step = STEPS.findIndex(s => s.id === stepId);
   if (step < 0) step = 0;
@@ -184,6 +186,66 @@ export function renderWizard(root, c, stepId, nav) {
     changed();
   }
 
+  /** รายการการ์ดแบบย่อ + ชิปกรองแหล่งที่มา (2024 / OGL / แพ็ก) + ช่องค้นหา (รายการ > 12) — กรองใน DOM ไม่เสีย focus */
+  function pickGrid(key, items, card) {
+    const src = x => (x.open ? 'open' : x.pack ? 'pack' : 'base');
+    const groups = new Set(items.map(src));
+    const st = (FLT[key] ||= { g: 'all', q: '' });
+    if (st.g !== 'all' && !groups.has(st.g)) st.g = 'all';
+    const cards = items.map(x => { const el = card(x); el.dataset.g = src(x); el.dataset.q = x.name.toLowerCase(); return el; });
+    const apply = () => { for (const el of cards) el.hidden = !((st.g === 'all' || el.dataset.g === st.g) && (!st.q || el.dataset.q.includes(st.q))); };
+    apply();
+    const chipsEl = groups.size > 1 ? h('div.chips.pick-chips', [['all', 'ทั้งหมด'], ['base', '2024'], ['open', '📖 OGL'], ['pack', '📦 แพ็ก']]
+      .filter(([g]) => g === 'all' || groups.has(g)).map(([g, l]) => h('button.chip' + (st.g === g ? '.on' : ''), { type: 'button', 'data-g': g,
+        onclick: e => { st.g = g; for (const b of chipsEl.children) b.classList.toggle('on', b.dataset.g === g); apply(); } }, l))) : null;
+    const q = items.length > 12 ? h('input.inp.pick-q', { type: 'search', placeholder: 'ค้นหาชื่อ…', value: st.q, oninput: e => { st.q = e.target.value.trim().toLowerCase(); apply(); } }) : null;
+    return [chipsEl || q ? h('div.pick-bar', chipsEl, q) : null, h('div.grid.pick-grid', cards)];
+  }
+  /** แถบพับในหน้าต่างรายละเอียด: หัว + สรุปไทย 1 บรรทัด แตะแล้วเห็นการ์ดเต็ม */
+  const fold = (title, sub, body) => h('details.pick-fold', h('summary', h('b', title), sub ? h('small', sub) : null), body);
+  function featSheet(f, sel, onPick) {
+    sheet(f.name, h('div', featureCard({ name: f.name, text: f.text, th: featTh(f.id), tag: 'Origin Feat', full: featFull(f.id), pack: f.pack, open: f.open })),
+      [{ label: sel ? '✓ เลือกอยู่' : 'เลือก Feat นี้', primary: true, onClick: onPick }]);
+  }
+  function subSheet(cls, sb, cur, onPick) {
+    const desc = sb.stub ? 'ข้อมูลฟรีไม่มีซับคลาสนี้ — เลือกไว้ได้ แล้วไปเติมข้อมูลเองที่ Content Pack' : sb.pack ? sb.th?.s : thc(cls.id).sub?.desc;
+    const fs = f => f.th?.s || thc(cls.id).sub?.f?.[f.id]?.s;
+    sheet(sb.name, h('div',
+      h('div.hero-row', h('span.hero-ico', { html: iconSvg(cls.id) }), h('div', h('b', `${cls.name} Subclass` + (sb.pack ? ' · ' + srcTag(sb) : sb.stub ? ' · 🟡' : ' · SRD')), h('p', desc || ''))),
+      sb.stub ? stubSubBox(sb, cls.id) : null,
+      sb.features?.length ? [h('h4', 'ฟีเจอร์ซับคลาส · แตะเพื่ออ่าน'), [...sb.features].sort((a, b) => a.level - b.level).map(f => fold(`Lv ${f.level} · ${f.name}`, fs(f), classFeatureCard(cls, f, true)))] : null),
+      [{ label: cur ? '✓ เลือกอยู่' : 'เลือกซับคลาสนี้', primary: true, onClick: onPick }]);
+  }
+  function bgSheet(bg) {
+    const fid = featIdOf(bg.feat), feat = bg.feat && D.feat[fid], oth = D.open?.th?.backgrounds?.[bg.id];
+    sheet(bg.name, h('div',
+      h('div.hero-row', h('span.hero-ico', { html: iconSvg('background') }), h('div', h('b', packSub(bg, 'Background')), h('p', D.th.backgrounds?.[bg.id]?.desc || ''))),
+      h('dl.kv',
+        h('dt', 'Ability Scores'), h('dd', bg.custom ? 'เลือกเอง 3 ตัว (+2/+1 หรือ +1/+1/+1)' : bg.abilities.map(a => ABIL_EN[a]).join(', ')),
+        h('dt', 'Skills'), h('dd', [bg.skills.join(', '), bg.skillPick ? `เลือกเพิ่ม ${bg.skillPick.n}` : ''].filter(Boolean).join(' · ') || '—'),
+        h('dt', 'Tool'), h('dd', (bg.tool || '—').replace(/\s*\(see.*\)/, '')),
+        h('dt', 'Origin Feat'), h('dd', bg.custom && !bg.feat ? 'เลือกเอง 1 อย่าง' : bg.feat)),
+      feat ? fold(`Origin Feat: ${bg.feat}`, featTh(fid)?.s, featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: featFull(fid), pack: feat.pack, open: feat.open })) : null,
+      bg.feature ? h('p.small', h('b', `ฟีเจอร์ต้นฉบับ (2014): ${bg.feature.name}`), typeof oth?.f === 'string' ? ' — ' + oth.f : '') : null),
+      [{ label: c.bgId === bg.id ? '✓ เลือกอยู่' : 'เลือก Background นี้', primary: true, onClick: () => pickBg(bg) }]);
+  }
+  function pickBg(bg) {
+    if (c.bgId !== bg.id) { c.bgId = bg.id; c.abilities.bonus = {}; delete c.choices.bgAbil; delete c.choices.bgFeat; delete c.choices.bgSkills; c.abilities.plus2 = null; c.abilities.plus1 = null; c.equipment.bgOpt = 'A'; rebuildEquipment(c); }
+    changed();
+  }
+  function spSheet(s) {
+    const t = ths(s.id), opt = spOpt(s.id);
+    sheet(s.name, h('div',
+      h('div.hero-row', h('span.hero-ico', { html: iconSvg(s.open ? 'human' : s.id) }), h('div', h('b', t.tag || packSub(s, 'Species')), h('p', t.desc || ''))),
+      h('dl.kv', h('dt', 'Creature Type'), h('dd', s.type || 'Humanoid'), h('dt', 'Size'), h('dd', s.sizeChoice ? 'Small หรือ Medium' : s.size),
+        h('dt', 'Speed'), h('dd', `${s.speed} ft`), s.darkvision ? [h('dt', 'Darkvision'), h('dd', `${s.darkvision} ft`)] : null),
+      s.open ? h('p.muted.small', `📖 ${s.pack} (กฎ 2014) — ตัดโบนัสค่าพลังของเผ่าออกแล้ว เพราะกฎ 2024 ได้จาก Background`) : null,
+      opt ? [h('h4', opt.label), h('ul.pick-ln', opt.opts.map(([n, d]) => h('li', h('b', n), d ? ` (${d})` : '', t.ln?.[n] ? h('small.muted', ' — ' + t.ln[n]) : null)))] : null,
+      h('h4', 'ความสามารถของเผ่า · แตะเพื่ออ่าน'),
+      (s.traits || []).map(tr => { const th = t.f?.[tr.id]; return fold(tr.name, th?.s, featureCard({ name: tr.name, text: tr.text, th: th || (s.open ? { t: tr.t } : null), full: traitFull(s, tr.id), pack: s.open ? s.pack : null, open: s.open })); })),
+      [{ label: c.speciesId === s.id ? '✓ เลือกอยู่' : 'เลือกเผ่านี้', primary: true, onClick: () => { if (c.speciesId !== s.id) { c.speciesId = s.id; c.speciesOpt = {}; } changed(); } }]);
+  }
+
   /** การ์ดตัวเลือกหลักที่เลือกไว้ + แถบพับ "เปลี่ยน…" ที่มีตัวเลือกทั้งหมด */
   function pickHead(key, cur, label, grid) {
     if (!cur) return grid;
@@ -194,10 +256,10 @@ export function renderWizard(root, c, stepId, nav) {
   function klass() {
     const out = [intro('CLASS · เลือกคลาส', 'คลาสคือ "อาชีพ" ของตัวละคร เป็นตัวกำหนดว่าสู้แบบไหน ใช้เวทได้ไหม และเก่งเรื่องอะไร แตะการ์ดเพื่ออ่านรายละเอียดก่อนตัดสินใจ')];
     const cls = D.cls[c.classId];
-    const grid = h('div.grid', D.classes.map(k => choiceCard({
+    const grid = pickGrid('cls', D.classes, k => choiceCard({
       id: k.id, iconName: k.id, title: k.name, sub: `d${k.hitDie} · ${k.core['Primary Ability']}`,
-      desc: thc(k.id).tag, selected: c.classId === k.id, onClick: () => classSheet(k),
-    })));
+      selected: c.classId === k.id, onClick: () => classSheet(k),
+    }));
     out.push(...[].concat(pickHead('pick-class', cls && { icon: cls.id, title: `${cls.name} ${compute(c).CL}`, sub: thc(cls.id).tag }, 'คลาส', grid)));
     if (!cls) return out;
     const x = compute(c);
@@ -304,12 +366,11 @@ export function renderWizard(root, c, stepId, nav) {
     // ซับคลาส
     const subs = D.subs?.[cls.id] || [cls.subclass];
     const isCur = sb => sub === sb || (!!sub.phb && sub.phb === sb.phb);
-    put(`${cls.name} Subclass`, `ซับคลาส: ${sub.name}`, L >= 3 ? 'ได้ตอนเลเวล 3 · แตะการ์ดเพื่อเปลี่ยน' : 'จะได้ตอนเลเวล 3 — เลือกไว้ก่อนได้เลย', false,
-      h('div.grid.grid-2', [...subs, ...(subs.some(isCur) ? [] : [sub])].map(sb => choiceCard({
+    put(`${cls.name} Subclass`, `ซับคลาส: ${sub.name}`, L >= 3 ? 'ได้ตอนเลเวล 3 · แตะการ์ดเพื่อดูรายละเอียด' : 'จะได้ตอนเลเวล 3 — เลือกไว้ก่อนได้เลย', false,
+      pickGrid('sub-' + cls.id, [...subs, ...(subs.some(isCur) ? [] : [sub])], sb => choiceCard({
         id: sb.id, iconName: cls.id, title: sb.name, sub: sb.stub ? '🟡 ต้องเติมข้อมูล' : sb.pack ? srcTag(sb) : 'SRD',
-        desc: sb.stub ? null : sb.pack ? sb.th?.s : thc(cls.id).sub?.desc, selected: isCur(sb),
-        onClick: () => { setSub(c, cls.id, sb); changed(); },
-      }))),
+        selected: isCur(sb), onClick: () => subSheet(cls, sb, isCur(sb), () => { setSub(c, cls.id, sb); changed(); }),
+      })),
       sub.stub ? stubSubBox(sub, cls.id) : null,
       h('p.muted.small', 'ข้อมูลฟรี (SRD) มีซับคลาสละ 1 แบบ — อันที่ขึ้น 🟡 เลือกไว้ได้ แล้วไปเติมข้อมูลเองที่ ', h('a', { href: '#/packs' }, 'Content Pack')));
     // ฟีเจอร์ซับคลาสจากแพ็กที่ให้เลือก A/B
@@ -370,7 +431,7 @@ export function renderWizard(root, c, stepId, nav) {
     }
     const f = D.feat[ch.bgFeat];
     out.push(acc({ key: 'bg-ofeat', title: 'Origin Feat (เลือก 1)', sub: f ? f.name + (featTh(f.id)?.s ? ' — ' + featTh(f.id).s : '') : 'ยังไม่ได้เลือก', need: !f, done: !!f, openSet },
-      h('div.grid', origin.map(o => choiceCard({ id: o.id, iconName: 'feat', title: o.name, desc: featTh(o.id)?.s, selected: ch.bgFeat === o.id, onClick: () => { ch.bgFeat = o.id; changed(); } })))));
+      h('div.grid', origin.map(o => choiceCard({ id: o.id, iconName: 'feat', title: o.name, sub: packSub(o), selected: ch.bgFeat === o.id, onClick: () => featSheet(o, ch.bgFeat === o.id, () => { ch.bgFeat = o.id; changed(); }) })))));
     if (bg.feature || bg.lang || bg.text) out.push(acc({ key: 'bg-orig', title: 'ข้อมูลต้นฉบับ (2014)', sub: bg.feature ? `ฟีเจอร์: ${bg.feature.name}` : null, openSet },
       D.th.backgrounds?.[bg.id]?.desc ? h('p', D.th.backgrounds[bg.id].desc) : null,
       bg.feature ? featureCard({ name: bg.feature.name, text: bg.feature.text, th: D.open.th.backgrounds?.[bg.id]?.f ? { s: D.open.th.backgrounds[bg.id].f } : null, tag: 'ฟีเจอร์ Background (2014) — ใช้ได้ถ้า DM อนุญาต', pack: bg.pack, open: bg.open, full: bg.open ? ['open-backgrounds', [bg.id, 'feature']] : null }) : null,
@@ -382,11 +443,10 @@ export function renderWizard(root, c, stepId, nav) {
 
   function background() {
     const out = [intro('BACKGROUND · ภูมิหลัง', 'ตัวละครเคยทำอะไรมาก่อนออกผจญภัย Background ให้โบนัสค่าพลัง สกิล 2 อย่าง เครื่องมือ 1 อย่าง และ Origin Feat 1 อย่าง')];
-    const grid = [h('div.grid', D.backgrounds.map(bg => choiceCard({
+    const grid = [...pickGrid('bg', D.backgrounds, bg => choiceCard({
       id: bg.id, iconName: 'background', title: bg.name, sub: packSub(bg, bg.custom ? 'เลือกค่าพลัง + Feat เอง' : bg.abilities.map(a => ABIL_SHORT[a]).join(' · ')),
-      desc: D.th.backgrounds?.[bg.id]?.desc, selected: c.bgId === bg.id,
-      onClick: () => { if (c.bgId !== bg.id) { c.bgId = bg.id; c.abilities.bonus = {}; delete c.choices.bgAbil; delete c.choices.bgFeat; delete c.choices.bgSkills; c.abilities.plus2 = null; c.abilities.plus1 = null; c.equipment.bgOpt = 'A'; rebuildEquipment(c); } changed(); },
-    }))), h('p.muted.small', 'ข้อมูลฟรี (SRD) มี Background 4 แบบ — Background อื่นจากหนังสือ (เช่น Guard) เพิ่มเองได้ที่ ', h('a', { href: '#/packs' }, 'Content Pack'))];
+      selected: c.bgId === bg.id, onClick: () => bgSheet(bg),
+    })), h('p.muted.small', 'ข้อมูลฟรี (SRD) มี Background 4 แบบ — Background อื่นจากหนังสือ (เช่น Guard) เพิ่มเองได้ที่ ', h('a', { href: '#/packs' }, 'Content Pack'))];
     const bg = bgOf(c);
     out.push(...[].concat(pickHead('pick-bg', bg && { icon: 'background', title: bg.name, sub: D.th.backgrounds?.[bg.id]?.desc }, 'Background', grid)));
     if (bg?.custom) out.push(...customBg(D.bg[c.bgId]));
@@ -432,11 +492,10 @@ export function renderWizard(root, c, stepId, nav) {
   }
   function species() {
     const out = [intro('SPECIES · เผ่าพันธุ์', 'เผ่าพันธุ์ของตัวละคร ให้ความสามารถพิเศษติดตัว เช่น มองในที่มืดได้ หรือพ่นไฟได้')];
-    const grid = h('div.grid', D.species.map(s => choiceCard({
+    const grid = pickGrid('sp', D.species, s => choiceCard({
       id: s.id, iconName: s.open ? 'human' : s.id, title: s.name, sub: packSub(s, `${s.sizeChoice ? 'Small/Medium' : s.size.split(' ')[0]} · Speed ${s.speed}`),
-      desc: ths(s.id).tag, selected: c.speciesId === s.id,
-      onClick: () => { if (c.speciesId !== s.id) { c.speciesId = s.id; c.speciesOpt = {}; } changed(); },
-    })));
+      selected: c.speciesId === s.id, onClick: () => spSheet(s),
+    }));
     const sp = D.sp[c.speciesId];
     out.push(...[].concat(pickHead('pick-sp', sp && { icon: sp.open ? 'human' : sp.id, title: sp.name, sub: ths(sp.id).desc }, 'Species', grid)));
     const nLang = 2 + ((classLevels(c).ranger || 0) >= 2 ? 2 : 0);
@@ -461,8 +520,8 @@ export function renderWizard(root, c, stepId, nav) {
       const origin = D.feats.filter(f => f.category === 'Origin');
       out.push(acc({ key: 'sp-versatile', title: 'Versatile: Origin Feat', sub: D.feat[so.feat]?.name || 'เลือก Origin Feat 1 อย่าง', need: !so.feat, done: !!so.feat, openSet },
         h('div.grid.grid-2', origin.map(f => choiceCard({
-          id: f.id, iconName: 'feat', title: f.name, sub: packSub(f), desc: featTh(f.id)?.s, selected: so.feat === f.id,
-          onClick: () => { so.feat = f.id; changed(); },
+          id: f.id, iconName: 'feat', title: f.name, sub: packSub(f), selected: so.feat === f.id,
+          onClick: () => featSheet(f, so.feat === f.id, () => { so.feat = f.id; changed(); }),
         }))),
         so.feat === 'magic-initiate' && !(bgOf(c)?.feat || '').startsWith('Magic Initiate') ? [h('p.muted', 'Magic Initiate: เลือกรายการเวท'),
           chips(['cleric', 'druid', 'wizard'], c.choices.miList ? [c.choices.miList] : [], 1, v => { c.choices.miList = v[0]; c.choices.miCantrips = []; c.choices.miSpell = null; changed(); }, { labels: { cleric: 'Cleric', druid: 'Druid', wizard: 'Wizard' } }), miAbility()] : null,

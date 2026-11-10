@@ -843,3 +843,18 @@ ul.cd-feats { margin: 0; padding-left: 18px; } ul.cd-feats li { margin: 3px 0; }
 .theme-btn { flex: none; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); font-size: 1rem; line-height: 1; cursor: pointer; padding: 0; }
 .topbar { gap: 8px; }
 .topnav { flex: 1; justify-content: flex-end; }
+
+/* วิซาร์ด: รายการเลือกแบบย่อ + หน้าต่างรายละเอียด */
+.pick-bar { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 0; }
+.pick-bar .chips { margin: 0; }
+.pick-grid .choice { align-items: center; }
+.pick-fold { border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; background: var(--card2); }
+.pick-fold > summary { list-style: none; cursor: pointer; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.pick-fold > summary::-webkit-details-marker { display: none; }
+.pick-fold > summary b::after { content: ' ▸'; color: var(--muted); }
+.pick-fold[open] > summary b::after { content: ' ▾'; }
+.pick-fold > summary small { color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.pick-fold[open] > summary { border-bottom: 1px solid var(--line); }
+.pick-fold > :not(summary) { margin: 8px 10px 10px; }
+.pick-ln { padding-left: 18px; margin: 6px 0; }
+.pick-ln li { margin: 4px 0; }
