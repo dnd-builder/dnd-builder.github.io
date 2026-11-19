@@ -1090,7 +1090,7 @@ body[data-page="c"] .feat { background: transparent; }
 .lv-head > b { font-size: .8rem; letter-spacing: .08em; color: var(--purple); }
 .lv-head > small { color: var(--muted); font-size: .76rem; }
 .lv-head .info-btn { margin-left: auto; }
-.lv-head.pact { border: 1.5px solid var(--purple); border-radius: 12px; padding: 8px 10px; }
+.lv-head.pact { margin-top: 12px; }
 .lv-slots { display: flex; align-items: center; gap: 8px; }
 .lv-slots .pips { margin: 0; }
 .lv-slots small { font-size: .76rem; color: var(--muted); }
