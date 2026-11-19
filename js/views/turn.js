@@ -160,7 +160,8 @@ export function turnBar(c, x, P, save, redraw) {
       pill('t-m', `${mv}ft`, null, mv > 0, () => moveSheet(x, P, ch)),
       h('button.tbtn', { onclick: () => openPanel(c, x, P, save, redraw), 'aria-label': 'เหลืออะไรทำได้อีก' }, '📋'),
       h('button.tbtn.next', { onclick: () => nextTurn(x, P, save, redraw), 'aria-label': 'เทิร์นใหม่' }, '⏭')),
-    h('p.turn-note', notes.join(' · ')),
+    h('div.turn-foot', h('p.turn-note', notes.join(' · ')),
+      h('button.turn-end', { onclick: () => { endCombat(P); save(); redraw(); toast('🏳️ จบการต่อสู้แล้ว — เอฟเฟกต์ระยะสั้นและ Rage จบตาม'); }, 'aria-label': 'จบการต่อสู้' }, '⏹ จบการต่อสู้')),
     fxRow(P, save, redraw));
 }
 
