@@ -908,3 +908,139 @@ html.standalone, html.standalone body { overscroll-behavior-y: none; }
   box-shadow: 0 8px 24px #0007; cursor: pointer; animation: rb-in .2s ease-out; }
 .update-bar b { color: var(--gold); }
 .update-bar small { color: var(--muted); width: 100%; text-align: center; }
+
+/* ---------- เฟส 10: ใบตัวละคร — กรอบสี ไม่มีพื้น · HP เด่น ---------- */
+:root { --c-hp: #e0464a; --c-ac: #3f8fd8; --c-init: #d08a1c; --c-spd: #1d9e75; --c-star2: #d08a1c; }
+body[data-page="c"] .topbar { display: none; }
+body[data-page="c"] .sticky-stats { top: env(safe-area-inset-top, 0px); }
+body[data-page="c"] :is(.card, .box, .ab6, .hp-box, .rest-btn, .sh-ico) { background: transparent; box-shadow: none; }
+.sh-head { margin: 0 -16px; padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px; gap: 6px; border-bottom: 1px solid var(--line); }
+.back-btn { width: 30px; padding: 0; font-size: 1.9rem; line-height: 1; text-decoration: none; color: var(--muted); border: 0; background: none; }
+.sh-head .sh-ico { width: 40px; height: 40px; padding: 6px; border-radius: 50%; border: 1.5px solid var(--gold); overflow: hidden; }
+.sh-head .sh-ico .ico { width: 26px; height: 26px; }
+.sh-head .sh-ico.has-pic { padding: 0; }
+.sh-head .sh-ico img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.sh-head .sh-title h1 { font-size: 1.1rem; line-height: 1.25; }
+.sh-head .sh-title p { font-size: .76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rest-one span .ico { width: 20px; height: 20px; color: var(--gold2); }
+.menu-item > span:first-child .ico { width: 20px; height: 20px; color: var(--gold2); vertical-align: -4px; margin-right: 6px; }
+.menu-item small { color: var(--muted); font-size: .8rem; }
+
+.hp-box { margin: 12px 0 8px; padding: 10px 12px 8px; border: 2px solid var(--c-hp); border-radius: 14px; }
+.hp-row { display: flex; align-items: center; gap: 10px; }
+.hp-main { flex: 1; min-width: 0; }
+.hp-lbl { display: flex; align-items: center; gap: 6px; }
+.hp-lbl b { font-size: .72rem; letter-spacing: .07em; color: var(--c-hp); }
+.hp-lbl small { font-size: .74rem; color: var(--muted); }
+.hp-lbl .info-btn, .hp-lbl button { margin-left: 2px; }
+.hp-num { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-top: 2px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.hp-num b { font-size: 2.7rem; line-height: 1; font-weight: 700; }
+.hp-num span { font-size: 1.15rem; color: var(--muted); }
+.temp-pill { align-self: center; font-style: normal; font-size: .74rem; padding: 1px 8px; border: 1px solid var(--c-ac); color: var(--c-ac); border-radius: 99px; }
+.hp-btns { display: grid; gap: 6px; flex: none; }
+.hp-btns .btn, .hp-sheet-btns .btn { min-height: 36px; padding: 4px 14px; background: transparent; font-weight: 700; }
+.hp-btns .heal, .hp-sheet-btns .heal { border: 1.5px solid var(--green); color: var(--green); }
+.hp-btns .dmg, .hp-sheet-btns .dmg { border: 1.5px solid var(--c-hp); color: var(--c-hp); }
+.hp-sheet-btns .temp { border: 1.5px solid var(--c-ac); color: var(--c-ac); }
+.hp-sheet-btns .btn.on { box-shadow: 0 0 0 2px currentColor inset; }
+.hp-box .hp-bar { display: flex; height: 8px; margin: 10px 0 4px; background: var(--bg2); }
+.hp-box .hp-bar i { border-radius: 0; background: var(--green); }
+.hp-box.mid .hp-bar i { background: var(--c-init); }
+.hp-box.low .hp-bar i, .hp-box.zero .hp-bar i { background: var(--c-hp); }
+.hp-box .hp-bar i.t { background: var(--c-ac); }
+.hp-box.zero .hp-num b { color: var(--c-hp); }
+.hp-box .hp-sub { margin-top: 2px; font-size: .8rem; }
+.hp-sheet { display: grid; gap: 10px; }
+.hp-sheet .hp-amt { font-size: 1.6rem; text-align: center; min-height: 52px; }
+.hp-sheet-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+
+.stat3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 8px; }
+.stat3 .box { width: 100%; height: 100%; border-width: 1.5px; padding: 6px 2px; }
+.stat3 .box small.en { font-size: .72rem; font-weight: 700; letter-spacing: .06em; }
+.stat3 .box b { font-size: 1.55rem; line-height: 1.2; }
+.st-ac .box { border-color: var(--c-ac); } .st-ac small.en { color: var(--c-ac); }
+.st-init .box { border-color: var(--c-init); } .st-init small.en { color: var(--c-init); }
+.st-spd .box { border-color: var(--c-spd); } .st-spd small.en { color: var(--c-spd); }
+
+.sticky-stats { padding: 4px 16px 0; border-bottom: 1px solid var(--line); }
+.sticky-stats .tabs { margin: 6px -16px 0; border-bottom: 0; }
+.sticky-stats .mini { position: static; display: none; width: 100%; gap: 14px; padding: 4px 2px 2px; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: .84rem; }
+.sticky-stats .mini.show { display: flex; }
+.mi i { font-style: normal; font-size: .72rem; font-weight: 700; }
+.mi-hp i { color: var(--c-hp); } .mi-ac i { color: var(--c-ac); } .mi-init i { color: var(--c-init); } .mi-spd { color: var(--c-spd); }
+
+.sec2 .star-legend { margin-left: auto; letter-spacing: 0; font-size: .74rem; color: var(--muted); font-weight: 400; white-space: pre; }
+.st1, .st2 { font-style: normal; }
+.st1 { color: var(--c-hp); } .st2 { color: var(--c-star2); }
+.ab6 { padding: 8px 2px 6px; gap: 1px; }
+.ab6 small { font-size: .64rem; }
+.ab6 small i { font-size: .8rem; letter-spacing: 0; }
+.ab6 .oval { margin: 0; padding: 0; min-width: 0; border: 0; background: none; font-size: .74rem; color: var(--muted); }
+.box4.sub4 { margin-top: 4px; }
+
+.saves-list { padding: 0 12px; }
+.sv-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 0; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sv-ico { display: flex; flex: none; width: 20px; height: 20px; color: var(--dim); }
+.sv-ico svg { width: 20px; height: 20px; }
+.sv-name { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.sv-name b { font-size: .95rem; min-width: 2.6em; }
+.sv-name small { color: var(--muted); font-size: .78rem; }
+.sv-val { font-size: 1.15rem; }
+.sv-row.prof .sv-ico, .sv-row.prof .sv-val, .sv-row.prof .sv-name b { color: var(--c-hp); }
+.save-notes { list-style: none; margin: 8px 0 0; padding: 6px 10px; border: 1px dashed var(--purple); border-radius: 10px; color: var(--text); }
+.save-notes li + li { margin-top: 4px; }
+.sh-head { flex-wrap: nowrap; }
+.sh-head .sh-title { flex: 1 1 0; }
+.sh-head .sh-title h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+.sh-head .icon-btn { width: 34px; height: 38px; }
+
+/* เฟส 10 รอบ ข: แบ่งกลุ่มด้วยกรอบสี (หัวข้อสี + ลิสต์ที่ตามมามีกรอบสีเดียวกัน) */
+.k-atk, .k-atk + *, .k-atk + * + * { --kc: var(--c-hp); }
+.k-l, .k-l + *, .k-l + * + * { --kc: var(--c-hp); }
+.k-a, .k-a + *, .k-a + * + * { --kc: var(--green); }
+.k-b, .k-b + *, .k-b + * + * { --kc: var(--c-init); }
+.k-r, .k-r + *, .k-r + * + * { --kc: var(--purple); }
+.k-o, .k-o + *, .k-o + * + * { --kc: var(--line); }
+.k-bag, .k-bag + *, .k-bag + * + * { --kc: var(--dim); }
+.k-slot, .k-slot + *, .k-slot + * + * { --kc: var(--purple); }
+.k-coin, .k-coin + *, .k-coin + * + * { --kc: var(--c-init); }
+.k-eq, .k-eq + *, .k-eq + * + * { --kc: var(--c-ac); }
+.sec2.k-o { color: var(--muted); }
+.sec2[class*="k-"] { color: var(--kc); }
+.sec2[class*="k-"] + :is(.card, .titems), .sec2.k-l + .k-l-note + .card, .sec2.k-slot + p + .card { border: 1.5px solid var(--kc); border-radius: 14px; }
+.sec2[class*="k-"] + .titems { gap: 0; padding: 2px 10px; }
+.sec2[class*="k-"] + .titems > .titem { border: 0; border-radius: 0; background: transparent; padding: 9px 2px; }
+.sec2[class*="k-"] + .titems > .titem + .titem { border-top: 1px solid var(--line); }
+.sec2.k-a + .titems .tag, .sec2.k-b + .titems .tag, .sec2.k-r + .titems .tag { border-color: var(--kc); color: var(--kc); background: transparent; }
+body[data-page="c"] :is(.titem, .spell-row, .feat-card, .fcard, .res, details.orig, .tip) { background: transparent; }
+.atk-hit { min-width: 46px; padding: 2px 8px; border: 1.5px solid var(--c-hp); border-radius: 10px; text-align: center; color: var(--c-hp); font-size: 1.15rem; }
+.atk-dmg { font-weight: 700; font-size: .92rem; }
+.atk-head small:nth-child(2) { text-align: center; }
+/* เวท */
+.sec.src-spell, .sec.src-class, .sec.src-species, .sec.src-feat { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1.5px solid var(--sc); color: var(--text); }
+.sec.src-spell { --sc: var(--purple); } .sec.src-class { --sc: var(--c-hp); } .sec.src-species { --sc: var(--c-spd); } .sec.src-feat { --sc: var(--c-init); }
+.src-tag { flex: none; font-family: var(--font); font-size: .7rem; font-weight: 700; padding: 1px 8px; border: 1.5px solid var(--sc); color: var(--sc); border-radius: 99px; letter-spacing: 0; }
+.spell-stats .box { border-width: 1.5px; border-color: var(--purple); }
+.spell-stats .box small.en { color: var(--purple); font-weight: 700; }
+.spell-stats .box b { font-size: 1.5rem; }
+.sp-group h4.lv { color: var(--purple); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+body[data-page="c"] .spell-row { border-color: var(--line); }
+body[data-page="c"] .spell-row.on { background: transparent; border-color: var(--purple); border-width: 1.5px; }
+/* กระเป๋า + เหรียญ */
+.coins { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.coin { gap: 3px; min-width: 0; }
+.coin small { font-size: .64rem; color: var(--muted); white-space: nowrap; }
+.coin-ico { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; font-size: .62rem; font-weight: 800; letter-spacing: .02em;
+  background: radial-gradient(circle at 35% 30%, var(--cl), var(--cm) 60%, var(--cd)); color: var(--ct); box-shadow: 0 0 0 1.5px var(--cd) inset, 0 1px 2px #0004; }
+.c-pp { --cl: #ffffff; --cm: #d9dde3; --cd: #8f97a3; --ct: #3d434c; }
+.c-gp { --cl: #fff2b0; --cm: #f2c230; --cd: #a8780a; --ct: #5a3e00; }
+.c-ep { --cl: #f6f3d0; --cm: #cfc98a; --cd: #87814a; --ct: #3f3b16; }
+.c-sp { --cl: #ffffff; --cm: #c4c8cc; --cd: #7d8287; --ct: #33373b; }
+.c-cp { --cl: #ffd2b0; --cm: #c8743c; --cd: #7f4019; --ct: #3e1c06; }
+.coin .inp.num { padding: 6px 2px; text-align: center; font-weight: 700; }
+.coin-step { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 100%; }
+.coin-step button { min-height: 30px; padding: 0; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+.coin-rates { display: flex; justify-content: space-around; margin: 4px 0 10px; }
+.inv-ico { flex: none; width: 26px; text-align: center; font-size: 1.05rem; }
+
+body[data-page="c"] .feat { background: transparent; }
