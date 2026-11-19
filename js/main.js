@@ -10,6 +10,8 @@ import { renderSheet } from './views/sheet.js';
 import { renderHelp } from './views/help.js';
 import { renderCard } from './views/card.js';
 import { renderGlossary, initGlossaryLinks } from './views/glossary.js';
+import { newCharacter } from './rules.js';
+import { initSW, syncBarHeight } from './pwa.js';
 
 const app = $('#app');
 const nav = hash => { location.hash = hash; };
@@ -44,6 +46,11 @@ function route() {
     const c = S.get(a);
     if (!c) return notFound();
     return page === 'c' ? renderSheet(app, c, b, nav) : renderWizard(app, c, b, nav);
+  }
+  if (page === 'new') {
+    // ทางลัดจากไอคอนแอป (กดค้าง) → สร้างตัวละครใหม่ · ใช้ replace กันกดย้อนกลับแล้วได้ตัวใหม่ซ้ำ
+    const c = newCharacter(); S.save(c);
+    return location.replace(`#/edit/${c.id}/basic`);
   }
   if (page === 'import' && a) return renderImport(app, parts.slice(1).join('/'), nav);
   if ((page === 'card' || page === 'view') && a) return renderCard(app, page, page === 'view' ? parts.slice(1).join('/') : a, nav);
@@ -81,6 +88,5 @@ loadData().then(() => {
   app.replaceChildren(h('section.hero', h('h1', 'โหลดข้อมูลไม่สำเร็จ'), h('p', 'ลองรีเฟรชหน้าอีกครั้ง'), h('button.btn', { onclick: () => location.reload() }, 'รีเฟรช')));
 });
 
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+initSW();
+syncBarHeight();

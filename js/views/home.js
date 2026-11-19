@@ -4,6 +4,7 @@ import { h, iconSvg, toast } from '../util.js';
 import * as S from '../store.js';
 import { compute, newCharacter } from '../rules.js';
 import { md } from '../md.js';
+import { installCard } from '../pwa.js';
 
 export function renderHome(root, nav) {
   const chars = S.list();
@@ -19,6 +20,7 @@ export function renderHome(root, nav) {
       h('p', 'สร้างตัวละครภาษาไทย ใช้กฎ D&D 2024 (SRD 5.2.1) — เซฟในเครื่องอัตโนมัติ ไม่ต้องล็อกอิน'),
       h('button.btn.primary.big', { onclick: () => { const c = newCharacter(); S.save(c); nav(`#/edit/${c.id}/basic`); } }, '+ สร้างตัวละครใหม่'),
       h('p', h('a', { href: '#/help' }, '🎓 เพิ่งเล่นครั้งแรก? อ่าน "เล่นยังไง" ก่อนได้'))),
+    installCard(),
     stale ? h('div.banner', '💾 ข้อมูลอยู่ในเครื่องนี้เท่านั้น ถ้าล้างข้อมูลเบราว์เซอร์จะหาย — ',
       h('button.link', { onclick: () => { S.exportFile(chars); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); renderHome(root, nav); } }, 'สำรองไว้ตอนนี้')) : null,
     chars.length ? h('div.char-list', chars.map(c => {
@@ -57,6 +59,7 @@ export async function renderImport(root, data, nav) {
 export function renderCredits(root) {
   root.replaceChildren(h('section.prose',
     h('h1', 'เครดิตและไลเซนส์'),
+    installCard({ dismissable: false }),
     h('h3', 'ข้อมูลกฎเกม'),
     h('p', 'This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at ',
       h('a', { href: 'https://www.dndbeyond.com/srd', target: '_blank', rel: 'noopener' }, 'https://www.dndbeyond.com/srd'),

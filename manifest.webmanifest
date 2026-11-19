@@ -1,17 +1,24 @@
 {
- "name": "Character Builder — D&D 2024",
- "short_name": "Character Builder",
+ "id": "/",
+ "name": "DnD Builder — สร้างตัวละคร D&D 2024",
+ "short_name": "DnD Builder",
+ "description": "สร้างตัวละครและใบตัวละครภาษาไทย ใช้กฎปี 2024 เลเวล 1–20 เซฟในเครื่อง ไม่ต้องล็อกอิน ใช้ได้แม้ไม่มีเน็ต",
  "start_url": "./",
+ "scope": "./",
  "display": "standalone",
  "background_color": "#121214",
  "theme_color": "#121214",
  "lang": "th",
+ "dir": "ltr",
+ "categories": ["games", "entertainment", "utilities"],
  "icons": [
-  {
-   "src": "assets/icon.svg",
-   "sizes": "any",
-   "type": "image/svg+xml",
-   "purpose": "any"
-  }
+  { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+  { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+  { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+  { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+ ],
+ "shortcuts": [
+  { "name": "สร้างตัวละครใหม่", "short_name": "สร้างใหม่", "url": "./#/new", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+  { "name": "คลังศัพท์", "short_name": "ศัพท์", "url": "./#/glossary", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
  ]
 }
