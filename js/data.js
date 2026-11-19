@@ -54,3 +54,11 @@ export async function loadAnimals() {
   if (!D.animals) { D.animals = await get('data/srd/animals.json'); D.animal = Object.fromEntries(D.animals.map(a => [a.id, a])); }
   return D.animals;
 }
+/** คลังไอเทม SRD (อุปกรณ์ เครื่องมือ ของวิเศษ) + ชื่อ/คำแปลไทย — โหลดตอนเปิดหน้าค้นหาไอเทมครั้งแรก */
+export async function loadItems() {
+  if (!D.items) {
+    const [items, th] = await Promise.all([get('data/srd/items.json'), get('data/th/items.json').catch(() => ({}))]);
+    D.items = items; D.itemTh = th; D.item = Object.fromEntries(items.map(i => [i.id, i]));
+  }
+  return D.items;
+}

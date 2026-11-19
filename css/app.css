@@ -1044,3 +1044,23 @@ body[data-page="c"] .spell-row.on { background: transparent; border-color: var(-
 .inv-ico { flex: none; width: 26px; text-align: center; font-size: 1.05rem; }
 
 body[data-page="c"] .feat { background: transparent; }
+/* คลังไอเทม */
+.add-item { display: flex; flex-direction: column; align-items: center; width: 100%; margin: 12px 0 4px; min-height: 52px; }
+.add-item small { font-weight: 400; font-size: .74rem; opacity: .85; }
+.ip { display: grid; gap: 8px; }
+.ip-q { font-size: 1rem; }
+.ip-cats { margin: 0 -16px; }
+.ip-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; padding: 0 10px; }
+.ip-row { display: flex; align-items: center; gap: 6px; }
+.ip-row + .ip-row { border-top: 1px solid var(--line); }
+.ip-pick, .ip-one { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 9px 0; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ip-main { flex: 1; min-width: 0; }
+.ip-main b { display: block; font-weight: 600; }
+.ip-main small { display: block; color: var(--muted); font-size: .76rem; line-height: 1.35; }
+.ip-add { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--gold); background: transparent; color: var(--gold); font-size: 1.2rem; font-weight: 700; cursor: pointer; }
+.ip-custom .ip-main b { color: var(--gold2); }
+.ip-more { padding: 10px 0; margin: 0; text-align: center; }
+.ip-pv-meta { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: .84rem; }
+.th-full p { margin: 0 0 8px; line-height: 1.65; }
+.item-ref { border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; }
+.use-one { width: 100%; border: 1.5px solid var(--green); color: var(--green); background: transparent; font-weight: 700; margin-bottom: 8px; }

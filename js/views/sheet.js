@@ -1,7 +1,7 @@
 // ใบตัวละครสำหรับใช้ตอนเล่น — โครงแบบ D&D Beyond: สแตททั้งหมดอยู่ส่วนบน + แท็บด้านล่าง
 // ใช้เต๋าจริง: แตะอะไรก็ได้ = เปิดการ์ดบอกสูตร (เว็บไม่ทอยให้)
 import { srcTag, featFull, traitFull } from '../packs.js';
-import { D, loadAnimals } from '../data.js';
+import { D, loadAnimals, loadItems } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet, uid } from '../util.js';
 import { md } from '../md.js';
 import * as S from '../store.js';
@@ -661,14 +661,7 @@ export function renderSheet(root, c, tab, nav) {
       h('p.muted.small', 'กด + / − เพื่อเพิ่มลดทีละ 1 หรือแตะช่องตัวเลขเพื่อพิมพ์จำนวนเองก็ได้')]);
     const kindIco = it => it.weapon ? '⚔️' : it.armor ? '🛡️' : /potion|elixir|philter|oil of/i.test(it.name) ? '🧪' : /scroll/i.test(it.name) ? '📜' : it.magic ? '✨' : /arrow|bolt|bullet|needle/i.test(it.name) ? '🏹' : /tools?$|kit$|supplies$|instrument/i.test(it.name) ? '🛠️' : '🎒';
     const isOn = it => worn(it) || (it.weapon && it.equipped !== false);
-    const name = h('input.inp', { placeholder: 'เพิ่มของ เช่น Potion of Healing', 'aria-label': 'ชื่อของ', list: 'dl-items' });
     const cw = carry(c, x), att = e.items.filter(it => it.attuned).length;
-    const add = () => {
-      const n = name.value.trim(); if (!n) return;
-      const w = D.weapons.find(z => z.name.toLowerCase() === n.toLowerCase()), a = D.armor.find(z => z.name.toLowerCase() === n.toLowerCase());
-      e.items.push({ name: w?.name || a?.name || n, qty: 1, weapon: w?.id, armor: a?.id }); e.touched = true;
-      done();
-    };
     const worn = it => (it.armor === 'shield' ? e.shield : it.armor && e.armor === it.armor);
     const row = (it, i) => h('button.item-row.inv', { onclick: () => itemSheet(it, i, x) },
       h('span.inv-ico', { 'aria-hidden': 'true' }, kindIco(it)),
@@ -691,21 +684,109 @@ export function renderSheet(root, c, tab, nav) {
       h('div.card.list', e.items.some(isOn) ? e.items.map((it, i) => (isOn(it) ? row(it, i) : null)) : h('p.muted.small', 'ยังไม่ได้ใส่หรือถืออะไร')),
       headK('bag', 'BACKPACK', 'ในกระเป๋า · แตะเพื่อใส่/ใช้/แก้'),
       h('div.card.list', e.items.some(it => !isOn(it)) ? e.items.map((it, i) => (isOn(it) ? null : row(it, i))) : h('p.muted.small', 'กระเป๋ายังว่าง')),
-      h('div.row', name, h('button.btn.primary', { onclick: add }, 'เพิ่ม')),
-      h('datalist#dl-items', [...D.weapons, ...D.armor, ...Object.keys(D.weights || {}).map(n => ({ name: n.replace(/\b\w/g, ch => ch.toUpperCase()) }))].map(z => h('option', { value: z.name }))),
-      h('p.muted.small', '💡 พิมพ์ชื่อภาษาอังกฤษตรงกับ SRD (เช่น Longsword, Chain Mail) เว็บจะรู้ว่าเป็นอาวุธหรือเกราะ และใส่น้ำหนักให้เอง'),
+      h('button.btn.primary.add-item', { onclick: () => itemPicker(x) }, '＋ เพิ่มไอเทม', h('small', 'ค้นหาจากคลังไอเทมในเกม หรือพิมพ์ชื่อเอง')),
     ];
   }
 
-  // แก้ของหนึ่งชิ้น: ถือ/สวม, จำนวน, น้ำหนัก, ของวิเศษ + Attunement, คำอธิบาย
-  function itemSheet(it, i, x) {
+  // ---------- คลังไอเทม (เฟส 10) ----------
+  const ICAT_TH = { weapon: 'อาวุธ', armor: 'เกราะ', gear: 'อุปกรณ์', pack: 'ชุดแพ็ก', ammo: 'กระสุน', focus: 'โฟกัสเวท', tool: 'เครื่องมือ', consumable: 'ใช้แล้วหมด', magic: 'ของวิเศษ' };
+  const KIND_TH = { wondrous: 'ของวิเศษ', weapon: 'อาวุธวิเศษ', armor: 'เกราะวิเศษ', ring: 'แหวน', potion: 'ยา', wand: 'ไม้กายสิทธิ์', staff: 'ไม้เท้า' };
+  const RAR_TH = { Common: 'ธรรมดา', Uncommon: 'ไม่ธรรมดา', Rare: 'หายาก', 'Very Rare': 'หายากมาก', Legendary: 'ตำนาน', Artifact: 'อาร์ติแฟกต์' };
+  const rarTh = r => (RAR_TH[r] ? `${r} (${RAR_TH[r]})` : r || '');
+  const itIco = it => (it.w || it.kind === 'weapon' ? '⚔️' : it.a || it.kind === 'armor' ? '🛡️' : it.kind === 'potion' || /^(Potion|Oil|Philter|Elixir)/.test(it.name) ? '🧪' : /Scroll/.test(it.name) ? '📜'
+    : it.kind === 'ring' ? '💍' : it.kind === 'wand' || it.kind === 'staff' || it.cat === 'focus' ? '🪄' : it.cat === 'magic' ? '✨' : it.cat === 'tool' ? '🛠️' : it.cat === 'ammo' ? '🏹' : it.cat === 'pack' ? '🎒' : it.cat === 'consumable' ? '🧪' : '🎒');
+  const itMeta = it => [it.w ? `${it.w.damage} · ${it.w.properties || ''}` : null, it.a ? `AC ${it.a['armor class (ac)']}` : null,
+    it.cat === 'magic' ? `${KIND_TH[it.kind] || 'ของวิเศษ'} · ${rarTh(it.rarity)}` : it.w || it.a ? null : ICAT_TH[it.cat], it.att ? 'ต้อง Attune' : null, it.cost || it.w?.cost || it.a?.cost, it.lb ? `${it.lb} lb` : null].filter(Boolean).join(' · ');
+  const itText = (it, opt = {}) => {
+    const T = D.itemTh?.[it.id];
+    const lines = t => t.split('\n').filter(l => l.trim()).map(l => h('p', l));
+    return [it.sub ? h('p.muted.small', it.sub) : null,
+      T?.t ? h('div.th-full', lines(T.t)) : null,
+      it.contents ? h('p.small', h('b', 'ในชุดมี: '), it.contents.join(', ')) : null,
+      it.text ? (T?.t ? h('details.orig', h('summary', 'ต้นฉบับ (EN) — SRD 5.2.1'), h('div.md', { html: md(it.text) })) : [h('div.md', { html: md(it.text) }), opt.note !== false ? h('p.muted.small', '🔤 คำแปลไทยเต็มของไอเทมนี้กำลังทยอยเพิ่ม') : null]) : null];
+  };
+  // ของวิเศษที่ต้องเลือกอาวุธ/เกราะฐาน (เช่น Weapon +1 → Longsword +1)
+  function baseOf(it) {
+    if (it.cat !== 'magic' || !/^(weapon|armor)$/.test(it.kind) || /^Ammunition/.test(it.name)) return { none: true };
+    const m = /\(([^)]*)\)/.exec(it.sub || ''), inner = m ? m[1] : '';
+    if (/Shield/.test(inner) || /^Shield/.test(it.name)) return { a: D.armorById.shield };
+    if (/Any/.test(inner)) return { pick: it.kind };
+    const w = D.weapons.find(z => z.name.toLowerCase() === inner.toLowerCase()), a = D.armor.find(z => z.name.toLowerCase() === inner.toLowerCase());
+    return w ? { w, auto: true } : a ? { a, auto: true } : { pick: it.kind };
+  }
+  function addItem(it, base, after) {
     const e = c.equipment;
+    let rec;
+    if (it.w) rec = { name: it.w.name, qty: 1, weapon: it.w.id };
+    else if (it.a) rec = { name: it.a.name, qty: 1, armor: it.a.id };
+    else {
+      const b = base || baseOf(it);
+      if (b.pick) return pickBase(it, after);
+      const bw = b.w, ba = b.a, bn = (bw || ba)?.name;
+      const plus = /^(Weapon|Armor) \+(\d)$/.exec(it.name);
+      rec = { name: !bn || b.auto || ba?.id === 'shield' ? it.name : plus ? `${bn} +${plus[2]}` : `${bn} (${it.name})`, qty: 1, ref: it.id };
+      if (bw) rec.weapon = bw.id;
+      if (ba) rec.armor = ba.id;
+      if (it.cat === 'magic') { rec.magic = true; if (it.att) rec.attune = true; }
+      if (it.lb && !itemWeight({ name: it.name })) rec.weight = it.lb;
+    }
+    const same = !rec.weapon && !rec.armor && e.items.find(z => z.name === rec.name && !z.weapon && !z.armor);
+    if (same) same.qty = (same.qty || 1) + 1; else e.items.push(rec);
+    e.touched = true; done();
+    toast(`เพิ่ม ${rec.name}${same ? ` (มี ${same.qty} ชิ้น)` : ''} ลงกระเป๋าแล้ว`);
+    after?.();
+  }
+  function pickBase(it, after) {
+    const opts = it.kind === 'weapon' ? D.weapons.map(w => ({ w, n: w.name, s: `${w.damage} · ${w.category || ''}` })) : D.armor.filter(a => a.id !== 'shield').map(a => ({ a, n: a.name, s: `AC ${a['armor class (ac)']} · ${a.group}` }));
+    const close = sheet(`${it.name}: เลือก${it.kind === 'weapon' ? 'อาวุธ' : 'เกราะ'}ฐาน`, h('div.ip',
+      h('p.muted.small', `${it.sub || ''} — เลือกว่าเป็น${it.kind === 'weapon' ? 'อาวุธ' : 'เกราะ'}ชนิดไหน เว็บจะตั้งชื่อและผูกกับช่องโจมตี/AC ให้`),
+      h('div.ip-list', opts.map(o => h('button.ip-row.ip-one', { onclick: () => { close(); addItem(it, { w: o.w, a: o.a }, after); } }, h('span.inv-ico', o.w ? '⚔️' : '🛡️'), h('div.ip-main', h('b', o.n), h('small', o.s)))),
+        h('button.ip-row.ip-one', { onclick: () => { close(); addItem(it, { none: true }, after); } }, h('span.inv-ico', '✨'), h('div.ip-main', h('b', 'ไม่ระบุ'), h('small', 'เพิ่มเป็นของวิเศษเฉย ๆ ไม่ผูกกับอาวุธ/เกราะ'))))));
+  }
+  async function itemPicker(x) {
+    try { await loadItems(); } catch { return toast('โหลดคลังไอเทมไม่ได้ ลองใหม่อีกครั้ง'); }
+    const TH = D.itemTh || {};
+    const all = [...D.weapons.map(w => ({ id: 'w:' + w.id, name: w.name, cat: 'weapon', w })), ...D.armor.map(a => ({ id: 'a:' + a.id, name: a.name, cat: 'armor', a })), ...D.items];
+    const CATS = [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ'], ['armor', 'เกราะ/โล่'], ['gear', 'อุปกรณ์'], ['tool', 'เครื่องมือ'], ['use', 'ยา/ใช้แล้วหมด'], ['magic', 'ของวิเศษ']];
+    const inCat = (it, k) => k === 'all' || (k === 'gear' ? /^(gear|pack|ammo|focus)$/.test(it.cat) : k === 'use' ? it.cat === 'consumable' || !!it.use : it.cat === k);
+    let cat = 'all', q = '';
+    const list = h('div.ip-list');
+    const qi = h('input.inp.ip-q', { type: 'search', placeholder: 'ค้นหา เช่น potion, ยาฟื้น, rope, เชือก', 'aria-label': 'ค้นหาไอเทม', oninput: ev => { q = ev.target.value; render(); } });
+    const chips = h('div.chips.filter.ip-cats', CATS.map(([k, l]) => h('button.chip' + (k === cat ? '.on' : ''), { onclick: ev => { cat = k; chips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b === ev.currentTarget)); render(); } }, l)));
+    const preview = it => explain(it.name, [h('p.ip-pv-meta', h('span.inv-ico', itIco(it)), h('span', [TH[it.id]?.n, itMeta(it)].filter(Boolean).join(' · '))), ...itText(it)],
+      [{ label: '＋ เพิ่มลงกระเป๋า', primary: true, onClick: () => { addItem(it); } }]);
+    const row = it => h('div.ip-row',
+      h('button.ip-pick', { onclick: () => preview(it) }, h('span.inv-ico', itIco(it)), h('div.ip-main', h('b', it.name), h('small', [TH[it.id]?.n, itMeta(it)].filter(Boolean).join(' · ')))),
+      h('button.ip-add', { onclick: () => addItem(it), 'aria-label': `เพิ่ม ${it.name}` }, '＋'));
+    function render() {
+      const qq = q.trim().toLowerCase();
+      const res = all.filter(it => inCat(it, cat) && (!qq || it.name.toLowerCase().includes(qq) || (TH[it.id]?.n || '').includes(qq)));
+      list.replaceChildren(...[
+        qq ? h('button.ip-row.ip-one.ip-custom', { onclick: () => { const n = q.trim(); c.equipment.items.push({ name: n, qty: 1 }); c.equipment.touched = true; done(); toast(`เพิ่ม ${n} แล้ว · แตะที่ของในกระเป๋าเพื่อใส่น้ำหนัก/คำอธิบาย`); } },
+          h('span.inv-ico', '✏️'), h('div.ip-main', h('b', `เพิ่ม "${q.trim()}" เป็นของที่ตั้งชื่อเอง`), h('small', 'สำหรับของที่ DM ให้ หรือของที่ไม่มีในคลัง'))) : null,
+        ...res.slice(0, 80).map(row),
+        res.length > 80 ? h('p.muted.small.ip-more', `แสดง 80 จาก ${res.length} ชิ้น — พิมพ์ค้นหาหรือเลือกหมวดเพื่อให้แคบลง`) : null,
+        !res.length ? h('p.muted.small.ip-more', 'ไม่เจอในคลัง ลองคำอื่น หรือกดเพิ่มเป็นของตั้งชื่อเองด้านบน') : null].filter(Boolean));
+    }
+    sheet('เพิ่มไอเทม', h('div.ip', qi, chips, list, h('p.muted.small', 'แตะชื่อเพื่ออ่านรายละเอียด · กด ＋ เพื่อใส่กระเป๋าทันที · ข้อมูลจาก SRD 5.2.1')));
+    render();
+    if (!matchMedia('(pointer: coarse)').matches) setTimeout(() => qi.focus(), 250);
+  }
+
+  // แก้ของหนึ่งชิ้น: ถือ/สวม, จำนวน, น้ำหนัก, ของวิเศษ + Attunement, คำอธิบาย
+  async function itemSheet(it, i, x) {
+    const e = c.equipment;
+    if (it.ref && !D.item) { try { await loadItems(); } catch { /* ไม่มีเน็ต — ไม่โชว์รายละเอียด */ } }
+    const ref = it.ref && D.item?.[it.ref];
     let close;
     const ch = (fn, keep) => () => { fn(); e.touched = true; done(); if (!keep) { close(); itemSheet(it, e.items.indexOf(it), x); } };
     const chk = (label, val, fn) => h('label.row.check-row', h('input', { type: 'checkbox', checked: !!val, onchange: ch(fn) }), ' ' + label);
     const w = D.weapon[it.weapon], a = D.armorById[it.armor];
     const attN = e.items.filter(z => z.attuned && z !== it).length;
     close = sheet(it.name, h('div.item-edit',
+      ref ? h('div.item-ref', h('p.ip-pv-meta', h('span.inv-ico', itIco(ref)), h('span', [D.itemTh?.[ref.id]?.n, itMeta(ref)].filter(Boolean).join(' · '))), ...itText(ref, { note: false })) : null,
+      ref && (ref.use || ref.cat === 'consumable') && it.qty > 0 ? h('button.btn.use-one', { onclick: () => { it.qty -= 1; if (it.qty <= 0) e.items.splice(e.items.indexOf(it), 1); e.touched = true; done(); close(); toast(`ใช้ ${it.name} ไป 1 ชิ้น${it.qty > 0 ? ` · เหลือ ${it.qty}` : ' · หมดแล้ว'}`); if (it.qty > 0) itemSheet(it, e.items.indexOf(it), x); } }, `🧪 ใช้ 1 ชิ้น (เหลือ ${it.qty})`) : null,
+      h('label.fld', h('small', 'ชื่อ'), h('input.inp', { value: it.name, onchange: ev => { const n = ev.target.value.trim(); if (n) { it.name = n; e.touched = true; done(); } } })),
       w ? h('p.small', `${w.damage} · ${w.properties || '—'}${w.mastery ? ` · Mastery: ${w.mastery}` : ''}`) : null,
       a ? h('p.small', `AC ${a['armor class (ac)']} · ${a.group}${a.strength && a.strength !== '-' ? ` · ต้องมี ${a.strength}` : ''}${a.stealth === 'Disadvantage' ? ' · Stealth เสียเปรียบ' : ''}`) : null,
       it.weapon ? chk('ถืออยู่ — ขึ้นในช่องโจมตี (เอาออก = เก็บในกระเป๋า)', it.equipped !== false, () => { it.equipped = it.equipped === false; }) : null,
