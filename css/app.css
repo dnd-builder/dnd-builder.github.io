@@ -1119,3 +1119,10 @@ body[data-page="c"] .sp-group .spell-row { border: 0; border-radius: 0; padding:
 body[data-page="c"] .sp-group .spell-row + .spell-row { border-top: 1px solid var(--line); }
 body[data-page="c"] .sp-group .spell-row.on { border: 0; }
 .sp-group .spell-row .badge { border: 0; padding: 0; }
+/* เหรียญ: ย่อให้กะทัดรัดขึ้น */
+.coin-row { gap: 8px; padding: 4px 0; }
+.coin-row .coin-ico { width: 26px; height: 26px; font-size: .5rem; box-shadow: inset 0 0 0 1.5px var(--cm), inset 0 0 0 2.5px var(--cd), 0 0 0 1px var(--cd), 0 1px 2px #0005; }
+.coin-row .inp.num { width: 68px; min-height: 0; padding: 3px 8px; font-size: 1rem; }
+.coin-name b { font-size: .74rem; } .coin-name small { font-size: .74rem; }
+.coin-row .coin-step button { width: 32px; min-height: 30px; font-size: .9rem; }
+.coin-list .coin-row .inp.num { height: 32px; min-height: 32px; }

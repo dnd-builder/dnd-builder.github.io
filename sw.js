@@ -1,5 +1,5 @@
 // แคชไฟล์ไว้ให้เปิดเว็บได้แม้เน็ตหลุดตอนเล่น
-const V = 'hh-v58';
+const V = 'hh-v59';
 const CORE = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'assets/icon.svg', 'assets/icon-192.png', 'assets/icon-512.png', 'assets/icon-maskable-512.png', 'assets/apple-touch-icon.png',
   'js/main.js', 'js/pwa.js', 'js/util.js', 'js/md.js', 'js/data.js', 'js/rules.js', 'js/fx.js', 'js/dice.js', 'js/store.js',
   'js/views/parts.js', 'js/views/glossary.js', 'js/views/packs.js', 'js/packs.js', 'js/views/wizard.js', 'js/views/sheet.js', 'js/views/card.js', 'js/views/turn.js', 'js/views/home.js', 'js/views/levelup.js', 'js/views/explain.js', 'js/views/help.js',
