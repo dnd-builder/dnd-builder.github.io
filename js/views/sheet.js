@@ -615,7 +615,7 @@ export function renderSheet(root, c, tab, nav) {
       const lvs = [...new Set([...ss.map(z => z.level), ...(b.pact ? [] : Object.keys(b.slots).map(Number))])].sort((p, q) => p - q);
       for (const L of lvs) {
         const list = ss.filter(z => z.level === L).sort((p, q) => p.name.localeCompare(q.name));
-        out.push(h('div.sp-group', h('div.lv-head', h('b', L ? `LEVEL ${L}` : 'CANTRIP'), L ? (b.pact ? null : slotPips(L)) : h('small', 'ร่ายได้ไม่จำกัด'), L && !b.pact && b.slots[L] ? infoBtnFn(slotInfo) : null),
+        out.push(h('div.sp-group', h('div.lv-head', h('b', L ? `LEVEL ${L}` : 'CANTRIP'), L ? (b.pact ? h('small', `ใช้ Pact Slot (ร่ายเป็น Lv ${Object.keys(b.slots)[0]})`) : slotPips(L)) : h('small', 'ร่ายได้ไม่จำกัด'), L && !b.pact && b.slots[L] ? infoBtnFn(slotInfo) : null),
           list.length ? h('div.spell-list', list.map(z => {
             const row = spellRow(z, { badge: TIME(z), tag: always.has(z.id) ? 'ติดตัว' : null, actions: () => [...T.castActions(z, x, P, done), T.pinAct(P, 'spell:' + z.id, done)], extra: () => spellMath(z, b, x) });
             Object.assign(row.dataset, { lv: z.level, c: z.concentration ? 1 : '', r: z.ritual ? 1 : '', t: T.castKind(z) || '', q: `${z.name} ${D.th.spells?.[z.id] || ''}`.toLowerCase() });
