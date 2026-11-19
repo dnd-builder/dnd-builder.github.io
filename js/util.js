@@ -54,18 +54,19 @@ export function toast(msg) {
 }
 
 /** bottom sheet แบบมือถือ — คืนฟังก์ชันปิด */
-export function sheet(title, content, actions = []) {
+export function sheet(title, content, actions = [], opt = {}) {
   const root = $('#sheet-root');
   const close = () => { wrap.classList.remove('open'); setTimeout(() => wrap.remove(), 200); document.removeEventListener('keydown', onKey); };
   const onKey = e => e.key === 'Escape' && close();
+  const acts = cls => h('div.bs-actions' + cls, actions.map(a => h('button.btn' + (a.primary ? '.primary' : ''), {
+    onclick: () => { if (a.onClick?.() !== false) close(); },
+  }, a.label)));
   const wrap = h('div.bs-wrap',
     h('div.bs-backdrop', { onclick: close }),
     h('div.bs', { role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
       h('div.bs-head', h('div.bs-grip'), h('h2', title), h('button.icon-btn', { 'aria-label': 'ปิด', onclick: close }, '✕')),
-      h('div.bs-body', content),
-      actions.length ? h('div.bs-actions', actions.map(a => h('button.btn' + (a.primary ? '.primary' : ''), {
-        onclick: () => { if (a.onClick?.() !== false) close(); },
-      }, a.label))) : null));
+      h('div.bs-body', opt.top && actions.length ? acts('.top') : null, content),
+      actions.length && !opt.top ? acts('') : null));
   root.append(wrap);
   document.addEventListener('keydown', onKey);
   requestAnimationFrame(() => wrap.classList.add('open'));

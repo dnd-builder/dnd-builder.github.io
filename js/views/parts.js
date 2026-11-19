@@ -84,14 +84,14 @@ export function spellDetail(s, actions = [], extra = null) {
       h('dt', 'Components'), h('dd', s.components),
       h('dt', 'Duration'), h('dd', s.duration)),
     h('p.muted.small', 'คลาสที่ใช้ได้: ' + s.classes.map(c => D.cls[c]?.name || c).join(', ')),
-    s.pack ? (s.text ? original(s.text, 'ข้อความ EN') : null) : h('div.md', { html: md(s.text) })), actions);
+    s.pack ? (s.text ? original(s.text, 'ข้อความ EN') : null) : h('div.md', { html: md(s.text) })), actions, { top: true });
 }
 
-export function spellRow(s, { selected, disabled, onToggle, badge, actions, extra } = {}) {
+export function spellRow(s, { selected, disabled, onToggle, badge, actions, extra, tag } = {}) {
   const row = h('div.spell-row' + (selected ? '.on' : '') + (disabled ? '.off' : ''),
     h('span.school', { html: iconSvg(s.school) }),
     h('div.spell-main', { onclick: () => spellDetail(s, typeof actions === 'function' ? actions() : actions, typeof extra === 'function' ? extra() : extra) },
-      h('b', s.name, s.concentration ? h('i.tag', 'C') : null, s.ritual ? h('i.tag', 'R') : null),
+      h('b', s.name, s.concentration ? h('i.tag', 'C') : null, s.ritual ? h('i.tag', 'R') : null, tag ? h('i.tag.tag-always', tag) : null),
       h('small', D.th.spells?.[s.id] || spellMeta(s))),
     badge ? h('span.badge', badge) : null,
     onToggle ? h('button.check', { 'aria-pressed': selected ? 'true' : 'false', 'aria-label': (selected ? 'เอาออก ' : 'เลือก ') + s.name, disabled: disabled && !selected, onclick: onToggle }, selected ? '✓' : '+') : null);

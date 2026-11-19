@@ -590,38 +590,43 @@ export function renderSheet(root, c, tab, nav) {
       e.currentTarget.parentNode.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', ui[key] === b.dataset.v));
       apply();
     } }, l)));
-    out.push(q, chipBar([['all', 'ทุกเลเวล'], ...lvs.map(l => [String(l), l ? `Lv ${l}` : 'Cantrip'])], 'spLv'),
-      chipBar([['c', 'Concentration'], ['r', 'Ritual'], ['a', 'Action'], ['b', 'Bonus Action'], ['re', 'Reaction']], 'spF'),
-      h('p.muted.small.sp-help', 'ⓘ ', h('button.link', { onclick: () => explain('Concentration', helpBody('conc')) }, 'Concentration (C) คืออะไร'), ' · ', h('button.link', { onclick: () => nav(`#/help/${c.id}/slot`) }, 'ร่ายเวทใช้สลอตยังไง')));
+    ui.spLv = 'all';
+    out.push(q, chipBar([['c', 'Concentration'], ['r', 'Ritual'], ['a', 'Action'], ['b', 'Bonus Action'], ['re', 'Reaction']], 'spF'));
     const empty = h('p.muted.small.sp-empty', 'ไม่เจอสเปลที่ตรงกับที่ค้นหา');
+    const TIME = s => ({ a: 'Action', b: 'Bonus', r: 'Reaction' })[T.castKind(s)] || s.time.replace(/^1 Minute.*/i, '1 นาที').replace(/^(\d+) Minutes?.*/i, '$1 นาที').replace(/^(\d+) Hours?.*/i, '$1 ชม.').replace(/,.*$/, '');
+    const slotInfo = () => explain('Spell Slots', [...helpBody('slot'), h('p.small', 'กดช่องสี่เหลี่ยมเมื่อร่ายเวทเลเวลนั้น (ช่องจะระบายทึบ = ใช้แล้ว) · กดช่องที่ระบายแล้วเพื่อคืน · สลอตคืนตอนพักยาว (Pact Slot ของ Warlock คืนตอนพักสั้นด้วย)'),
+      h('p.small', 'เวทเลเวลต่ำ ร่ายด้วยสลอตเลเวลสูงกว่าได้ (Upcast) มักแรงขึ้น — ดูในรายละเอียดเวท'), h('button.link', { onclick: () => nav(`#/help/${c.id}/slot`) }, 'อ่านเพิ่ม: ร่ายเวทใช้สลอตยังไง')]);
     for (const b of x.casting) {
-      out.push(h('h2.sec.src-spell', b.source), h('div.box3.spell-stats',
-        box('SAVE DC', 'ความยากเซฟ', String(b.dc), null, () => explain('Spell Save DC', [
-          h('div.formula', h('div.f-main', h('span', 'DC'), h('b', String(b.dc))), h('div.f-parts', h('span', '8 + ', h('b', sign(x.pb)), ' (Prof) + ', h('b', sign(x.m[b.ab])), ` (${ABIL_SHORT[b.ab]})`))),
-          ...helpBody('dc')])),
-        box('SPELL ATTACK', 'โจมตีด้วยเวท', sign(b.atk), null, () => explain('Spell Attack', [
-          formula('ทอยโจมตีด้วยเวท', b.atk, [['Proficiency', x.pb], [ABIL_SHORT[b.ab], x.m[b.ab]]], x.rf('atk', b.ab), 'd20', { tag: 'Spell Attack' }),
-          ...helpBody('spellatk')])),
-        box('ABILITY', 'ค่าที่ใช้ร่าย', ABIL_SHORT[b.ab], null, () => abilInfo(b.ab, x))));
-      if (Object.keys(b.slots).length) {
-        out.push(headK('slot', 'SPELL SLOTS', 'ช่องเวท · กดแล้ว = ใช้ไปแล้ว', infoBtn('slot')));
-        if (b.casterLv) out.push(h('p.muted.small', `สลอตรวมจาก Multiclass (caster level ${b.casterLv}) — ทุกคลาสใช้สลอตกองเดียวกัน`));
-        out.push(h('div.card.list.slot-list', Object.entries(b.slots).map(([lv0, n]) => {
-          const lv = (b.pact ? 'p' : '') + lv0, used = P.slots[lv] || 0;
-          return h('div.res', h('div.res-name', h('b', `${b.pact ? 'Pact Slot' : 'Level'} ${lv0}`), h('small', `เหลือ ${n - used}/${n} · ${b.pact ? 'คืนตอนพักสั้นหรือพักยาว' : 'คืนตอนพักยาว'}`)),
-            boxes(n, used, v => setUse(P.slots, lv, v, () => T.slot(P)), `slot ${lv}`));
-        })));
+      out.push(h('div.sp-src', h('h2.sec.src-spell', b.source), h('button.link.sp-ab', { onclick: () => abilInfo(b.ab, x) }, `ร่ายด้วย ${ABIL_SHORT[b.ab]}`)),
+        h('div.sp-stats',
+          box('SAVE DC', 'ความยากเซฟ', String(b.dc), null, () => explain('Spell Save DC', [
+            h('div.formula', h('div.f-main', h('span', 'DC'), h('b', String(b.dc))), h('div.f-parts', h('span', '8 + ', h('b', sign(x.pb)), ' (Prof) + ', h('b', sign(x.m[b.ab])), ` (${ABIL_SHORT[b.ab]})`))),
+            ...helpBody('dc')])),
+          box('SPELL ATTACK', 'โจมตีด้วยเวท', sign(b.atk), null, () => explain('Spell Attack', [
+            formula('ทอยโจมตีด้วยเวท', b.atk, [['Proficiency', x.pb], [ABIL_SHORT[b.ab], x.m[b.ab]]], x.rf('atk', b.ab), 'd20', { tag: 'Spell Attack' }),
+            ...helpBody('spellatk')]))));
+      if (b.casterLv) out.push(h('p.muted.small', `สลอตรวมจาก Multiclass (caster level ${b.casterLv}) — ทุกคลาสใช้สลอตกองเดียวกัน`));
+      const slotPips = lv0 => { const n = b.slots[lv0]; if (!n) return null; const lv = (b.pact ? 'p' : '') + lv0, used = P.slots[lv] || 0;
+        return h('span.lv-slots', boxes(n, used, v => setUse(P.slots, lv, v, () => T.slot(P)), `slot ${lv}`), h('small', `${n - used}/${n}`)); };
+      if (b.pact) out.push(h('div.lv-head.pact', h('b', `PACT SLOTS · Lv ${Object.keys(b.slots)[0]}`), slotPips(Object.keys(b.slots)[0]), infoBtnFn(slotInfo)));
+      const always = new Set(b.always);
+      const ids = [...new Set([...b.cantrips, ...b.always, ...b.prepared])];
+      const ss = ids.map(id => D.spell[id]).filter(Boolean);
+      const lvs = [...new Set([...ss.map(z => z.level), ...(b.pact ? [] : Object.keys(b.slots).map(Number))])].sort((p, q) => p - q);
+      for (const L of lvs) {
+        const list = ss.filter(z => z.level === L).sort((p, q) => p.name.localeCompare(q.name));
+        out.push(h('div.sp-group', h('div.lv-head', h('b', L ? `LEVEL ${L}` : 'CANTRIP'), L ? (b.pact ? null : slotPips(L)) : h('small', 'ร่ายได้ไม่จำกัด'), L && !b.pact && b.slots[L] ? infoBtnFn(slotInfo) : null),
+          list.length ? h('div.spell-list', list.map(z => {
+            const row = spellRow(z, { badge: TIME(z), tag: always.has(z.id) ? 'ติดตัว' : null, actions: () => [...T.castActions(z, x, P, done), T.pinAct(P, 'spell:' + z.id, done)], extra: () => spellMath(z, b, x) });
+            Object.assign(row.dataset, { lv: z.level, c: z.concentration ? 1 : '', r: z.ritual ? 1 : '', t: T.castKind(z) || '', q: `${z.name} ${D.th.spells?.[z.id] || ''}`.toLowerCase() });
+            return row;
+          })) : h('p.muted.small.lv-none', 'ยังไม่มีเวทเลเวลนี้ — ใช้สลอตนี้ร่ายเวทเลเวลต่ำกว่าแบบ Upcast ได้')));
       }
-      const group = (title, ids, badge) => {
-        const ss = ids.map(id => D.spell[id]).filter(Boolean).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
-        if (!ss.length) return null;
-        return h('div.sp-group', title ? h('h4.lv', title) : null, h('div.spell-list', ss.map(s => {
-          const row = spellRow(s, { badge: badge || LEVEL_TH(s.level), actions: () => [...T.castActions(s, x, P, done), T.pinAct(P, 'spell:' + s.id, done)], extra: () => spellMath(s, b, x) });
-          Object.assign(row.dataset, { lv: s.level, c: s.concentration ? 1 : '', r: s.ritual ? 1 : '', t: T.castKind(s) || '', q: `${s.name} ${D.th.spells?.[s.id] || ''}`.toLowerCase() });
-          return row;
-        })));
+      const group = (title, gids) => {
+        const g = gids.map(id => D.spell[id]).filter(Boolean).sort((p, q) => p.level - q.level || p.name.localeCompare(q.name));
+        return g.length ? h('div.sp-group', h('div.spell-list', g.map(z => { const row = spellRow(z, { badge: TIME(z), actions: () => [...T.castActions(z, x, P, done), T.pinAct(P, 'spell:' + z.id, done)], extra: () => spellMath(z, b, x) });
+          Object.assign(row.dataset, { lv: z.level, c: z.concentration ? 1 : '', r: z.ritual ? 1 : '', t: T.castKind(z) || '', q: `${z.name} ${D.th.spells?.[z.id] || ''}`.toLowerCase() }); return row; }))) : null;
       };
-      out.push(group('Cantrips', b.cantrips, 'Cantrip'), group('เตรียมไว้เสมอ', b.always, 'ติดตัว'), group(b.book ? 'เตรียมไว้วันนี้' : 'เวทที่เตรียมไว้', b.prepared));
       if (b.book?.length) out.push(h('details.orig.sp-book', h('summary', `สมุดเวท (${b.book.length})`), group('', b.book)));
       if (!b.fixed) out.push(h('button.btn.ghost', { onclick: () => nav(`#/edit/${c.id}/spells`) }, '✏️ เปลี่ยนเวท'));
     }
@@ -635,7 +640,8 @@ export function renderSheet(root, c, tab, nav) {
           && (!F || (F === 'c' ? d.c : F === 'r' ? d.r : F === 're' ? d.t === 'r' : d.t === F));
         r.hidden = !ok; any += ok;
       });
-      body.querySelectorAll('.sp-group').forEach(g => { g.hidden = !g.querySelector('.spell-row:not([hidden])'); });
+      const filtering0 = qq || ui.spF;
+      body.querySelectorAll('.sp-group').forEach(g => { g.hidden = !!filtering0 && !g.querySelector('.spell-row:not([hidden])'); });
       const filtering = qq || ui.spLv !== 'all' || ui.spF;
       body.querySelectorAll('.sp-book').forEach(d => { if (filtering && d.querySelector('.spell-row:not([hidden])')) d.open = true; });
       empty.hidden = !!any;
