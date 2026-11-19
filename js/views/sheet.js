@@ -651,7 +651,8 @@ export function renderSheet(root, c, tab, nav) {
     const coin = k => {
       const inp = h('input.inp.num', { type: 'number', inputmode: 'numeric', value: e[k] || 0, 'aria-label': `เหรียญ${COIN_TH[k]} (${k.toUpperCase()})`, onchange: ev => { e[k] = Math.max(0, parseInt(ev.target.value, 10) || 0); done(); } });
       const step = d => () => { e[k] = Math.max(0, (e[k] || 0) + d); done(); };
-      return h('div.coin.c-' + k, h('span.coin-ico', { 'aria-hidden': 'true' }, k.toUpperCase()), h('small', COIN_TH[k]), inp,
+      return h('div.coin-row.c-' + k, h('span.coin-ico', { 'aria-hidden': 'true' }, k.toUpperCase()), inp,
+        h('span.coin-name', h('b', k.toUpperCase()), h('small', COIN_TH[k])),
         h('div.coin-step', h('button', { onclick: step(-1), 'aria-label': `ลด ${k.toUpperCase()} 1` }, '−'), h('button', { onclick: step(1), 'aria-label': `เพิ่ม ${k.toUpperCase()} 1` }, '+')));
     };
     const coinInfo = () => explain('เหรียญ (Currency)', [
@@ -671,7 +672,7 @@ export function renderSheet(root, c, tab, nav) {
       worn(it) || (it.weapon && it.equipped !== false) ? h('span.badge.on', '✓') : null);
     return [
       headK('coin', 'CURRENCY', 'เงิน', infoBtnFn(coinInfo)),
-      h('div.coins', ['pp', 'gp', 'ep', 'sp', 'cp'].map(coin)),
+      h('div.card.list.coin-list', ['gp', 'sp', 'cp', 'pp', 'ep'].map(coin)),
       h('div.box3.inv-stats',
         box('WEIGHT', 'น้ำหนักที่แบก', `${cw.total}`, `/${cw.max}`, () => explain('น้ำหนักที่แบก', [
           h('div.formula', h('div.f-main', h('span', 'แบกอยู่'), h('b', `${cw.total} lb`)), h('div.f-parts', h('span', `แบกได้สูงสุด STR ${x.score.str} × 15 = `, h('b', `${cw.max} lb`)), h('span', 'เหรียญ 50 เหรียญ = 1 lb'))),
